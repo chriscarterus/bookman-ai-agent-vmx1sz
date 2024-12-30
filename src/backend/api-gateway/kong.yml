@@ -1,0 +1,186 @@
+# Kong API Gateway Configuration v3.0
+# Bookman AI Platform
+# Dependencies:
+# - kong: v3.0+
+# - plugins.yml: Enterprise plugin configurations
+# - routes.yml: Service route definitions
+
+_format_version: "3.0"
+
+# Core Configuration
+proxy_listen: "0.0.0.0:8000 ssl http2"
+admin_listen: "0.0.0.0:8001 ssl http2"
+ssl_cert: "/etc/kong/certificates/server.crt"
+ssl_cert_key: "/etc/kong/certificates/server.key"
+admin_ssl_cert: "/etc/kong/certificates/admin.crt"
+admin_ssl_cert_key: "/etc/kong/certificates/admin.key"
+
+# Database Configuration
+database: "off"  # Using DB-less mode for declarative configuration
+declarative_config: "/etc/kong/kong.yml"
+
+# Performance Optimizations
+nginx_worker_processes: "auto"
+nginx_worker_rlimit_nofile: 65535
+nginx_worker_connections: 16384
+mem_cache_size: "256m"
+
+# Security Settings
+ssl_protocols: "TLSv1.2 TLSv1.3"
+ssl_ciphers: "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384"
+ssl_prefer_server_ciphers: "on"
+ssl_session_tickets: "off"
+ssl_session_timeout: "1d"
+ssl_buffer_size: "4k"
+
+# Request/Response Settings
+client_max_body_size: "10m"
+client_body_buffer_size: "10m"
+nginx_proxy_real_ip_header: "X-Real-IP"
+nginx_proxy_real_ip_recursive: "on"
+
+# Logging Configuration
+error_log: "/dev/stderr notice"
+access_log: "/dev/stdout combined"
+admin_access_log: "/dev/stdout combined"
+admin_error_log: "/dev/stderr notice"
+log_level: "notice"
+
+# Plugin Configuration
+plugins:
+  - bundled  # Enable bundled plugins
+  - jwt
+  - oauth2
+  - cors
+  - rate-limiting
+  - prometheus
+  - request-transformer
+  - response-transformer
+  - ip-restriction
+  - acl
+  - key-auth
+  - bot-detection
+  - proxy-cache
+  - session
+  - statsd
+  - datadog
+
+# Service Defaults
+service_defaults: &service_defaults
+  connect_timeout: 60000
+  read_timeout: 60000
+  write_timeout: 60000
+  retries: 5
+  circuit_breakers:
+    max_concurrent_requests: 1000
+    max_pending_requests: 1000
+    max_requests: 1000
+    max_retries: 3
+
+# Health Checks Configuration
+health_checks:
+  active:
+    type: http
+    http_path: "/health"
+    timeout: 1
+    concurrency: 10
+    https_verify_certificate: true
+    healthy:
+      interval: 5
+      successes: 2
+      http_statuses:
+        - 200
+        - 201
+        - 202
+    unhealthy:
+      interval: 5
+      http_failures: 2
+      tcp_failures: 2
+      timeouts: 2
+      http_statuses:
+        - 429
+        - 404
+        - 500
+        - 501
+        - 502
+        - 503
+        - 504
+        - 505
+  passive:
+    type: http
+    healthy:
+      successes: 5
+      http_statuses:
+        - 200
+        - 201
+        - 202
+    unhealthy:
+      http_failures: 5
+      tcp_failures: 5
+      timeouts: 5
+      http_statuses:
+        - 429
+        - 500
+        - 502
+        - 503
+        - 504
+
+# Import Service Routes and Plugin Configurations
+imports:
+  - plugins.yml  # Enterprise plugin configurations
+  - routes.yml   # Service route definitions
+
+# Monitoring and Metrics
+vitals:
+  statsd:
+    enabled: true
+    host: "${STATSD_HOST}"
+    port: 8125
+    prefix: "kong"
+  prometheus:
+    enabled: true
+    status_code_metrics: true
+    latency_metrics: true
+    bandwidth_metrics: true
+    upstream_health_metrics: true
+
+# Tracing Configuration
+tracing:
+  enabled: true
+  sampler:
+    type: "const"
+    param: 1
+  reporter:
+    localAgentHostPort: "${JAEGER_AGENT_HOST}:6831"
+    logSpans: true
+  service_name: "kong-gateway"
+
+# Rate Limiting Advanced Settings
+rate_limiting_advanced:
+  redis:
+    host: "${REDIS_HOST}"
+    port: 6379
+    password: "${REDIS_PASSWORD}"
+    database: 0
+    timeout: 2000
+    ssl: true
+    ssl_verify: true
+    sentinel_master: "mymaster"
+    sentinel_role: "master"
+    sentinel_addresses:
+      - "${REDIS_SENTINEL_1}"
+      - "${REDIS_SENTINEL_2}"
+      - "${REDIS_SENTINEL_3}"
+
+# Security Headers
+headers:
+  - name: "X-Frame-Options"
+    value: "DENY"
+  - name: "X-Content-Type-Options"
+    value: "nosniff"
+  - name: "X-XSS-Protection"
+    value: "1; mode=block"
+  - name: "Strict-Transport-Security"
+    value: "max-age=31536000; includeSubDomains"
+  - name: "Content-Security-Policy"
+    value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';"
