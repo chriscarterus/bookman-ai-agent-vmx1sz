@@ -1,0 +1,92 @@
+node_modules
+.npm
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist
+build
+.eslintcache
+*.tsbuildinfo
+
+# Testing
+coverage
+tests
+__tests__
+*.test.*
+*.spec.*
+jest.config.js
+
+# Version Control
+.git
+.gitignore
+.gitattributes
+.husky
+
+# Development configs
+.vscode
+.idea
+.editorconfig
+*.code-workspace
+
+# Environment and secrets
+.env*
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+debug.log
+
+# Documentation
+*.md
+docs
+CHANGELOG
+LICENSE
+AUTHORS
+
+# OS generated
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose*
+
+# Development tools
+.eslintrc*
+.prettierrc*
+.stylelintrc*
+babel.config.js
+tsconfig.json
+webpack.config.js
+
+# Temporary files
+*.swp
+*.swo
+*~
+tmp/
+temp/
+
+# Cache directories
+.cache
+.parcel-cache
+.next
+.nuxt
+
+# Miscellaneous
+.github
+.circleci
+.travis.yml
+.gitlab-ci.yml
