@@ -1,0 +1,124 @@
+# Grafana Tempo Configuration v2.1.0
+# Distributed tracing backend configuration for Bookman AI platform
+
+# Server configuration
+server:
+  http_listen_port: 3200
+  grpc_listen_port: 9095
+  log_level: info
+  max_concurrent_streams: 1000
+
+# Distributor configuration for receiving traces
+distributor:
+  receivers:
+    # Jaeger receiver configuration
+    jaeger:
+      protocols:
+        thrift_http:
+          endpoint: "0.0.0.0:14268"
+          max_request_size: "10MB"
+        grpc:
+          endpoint: "0.0.0.0:14250"
+          max_recv_msg_size: "10MB"
+    
+    # OpenTelemetry receiver configuration
+    otlp:
+      protocols:
+        http:
+          endpoint: "0.0.0.0:4318"
+          cors_allowed_origins: ["*"]
+          max_request_size: "10MB"
+        grpc:
+          endpoint: "0.0.0.0:4317"
+          max_recv_msg_size: "10MB"
+  
+  # Log received spans for debugging and auditing
+  log_received_spans:
+    enabled: true
+    include_all_attributes: false
+
+# Storage configuration for trace data
+storage:
+  trace:
+    backend: s3
+    s3:
+      bucket: bookman-traces
+      endpoint: s3.amazonaws.com
+      region: us-west-2
+      access_key: ${AWS_ACCESS_KEY_ID}
+      secret_key: ${AWS_SECRET_ACCESS_KEY}
+      insecure: false
+      server_side_encryption: AES256
+      part_size: "10MB"
+    
+    # Storage pool configuration for performance
+    pool:
+      queue_depth: 2000
+      max_workers: 100
+      queue_wait: "3s"
+    
+    # Retention configuration (14 days)
+    retention: "336h"
+    block_retention: "336h"
+    
+    # Cache configuration for improved query performance
+    cache:
+      enabled: true
+      max_size_mb: 1024
+
+  # Write-ahead log configuration
+  wal:
+    path: /var/tempo/wal
+    encoding: snappy
+    search_encoding: zstd
+
+# Compactor configuration for trace data optimization
+compactor:
+  compaction:
+    block_retention: "336h"
+    compacted_block_retention: "336h"
+    compaction_window: "1h"
+    max_block_bytes: "100000000"
+    max_compaction_objects: "1000000"
+    retention_concurrency: 10
+    compaction_cycle: "30m"
+  
+  ring:
+    kvstore:
+      store: memberlist
+
+# Overrides configuration for tenant-specific settings
+overrides:
+  metrics_generator_processors: [service-graphs, span-metrics]
+  max_bytes_per_trace: "50MB"
+  max_search_bytes_per_trace: "20MB"
+  ingestion_rate_limit_bytes: "100MB"
+  ingestion_burst_size_bytes: "150MB"
+
+# Query frontend configuration
+query_frontend:
+  search:
+    max_duration: "336h"
+  trace_by_id:
+    max_duration: "336h"
+
+# Metrics configuration for monitoring Tempo itself
+metrics:
+  prometheus:
+    enabled: true
+    endpoint: "0.0.0.0:3201"
+  prefix: tempo
+
+# Integration with Prometheus for exemplars
+usage_report:
+  reporting_enabled: false
+
+# Search configuration
+search_enabled: true
+
+# Live tailing configuration
+live_tailing_enabled: true
+
+# Multitenancy configuration
+multitenancy_enabled: true
+auth_enabled: true
