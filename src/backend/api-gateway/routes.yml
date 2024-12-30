@@ -1,0 +1,255 @@
+# Kong API Gateway Routes Configuration v3.0
+# Bookman AI Platform
+# Dependencies:
+# - kong: v3.0+
+# - plugins.yml: Local plugin configurations
+
+_format_version: "3.0"
+
+# Service and Route Configurations
+services:
+  # Authentication Service
+  auth-service:
+    url: ${AUTH_SERVICE_URL}
+    protocol: grpc
+    connect_timeout: 3000
+    write_timeout: 5000
+    read_timeout: 5000
+    retries: 3
+    routes:
+      - name: auth_login
+        paths:
+          - /api/v1/auth/login
+        methods: 
+          - POST
+        protocols: 
+          - https
+        tags:
+          - auth
+          - public
+        plugins:
+          - name: cors
+          - name: rate-limiting
+            config:
+              minute: 100
+          - name: prometheus
+          - name: request-transformer
+
+      - name: auth_register
+        paths:
+          - /api/v1/auth/register
+        methods: 
+          - POST
+        protocols: 
+          - https
+        tags:
+          - auth
+          - public
+        plugins:
+          - name: cors
+          - name: rate-limiting
+            config:
+              minute: 50
+          - name: prometheus
+          - name: request-transformer
+
+  # Portfolio Service
+  portfolio-service:
+    url: ${PORTFOLIO_SERVICE_URL}
+    protocol: grpc
+    connect_timeout: 3000
+    write_timeout: 5000
+    read_timeout: 5000
+    retries: 2
+    routes:
+      - name: portfolio_management
+        paths:
+          - /api/v1/portfolio
+        methods: 
+          - GET
+          - POST
+          - PUT
+          - DELETE
+        protocols: 
+          - https
+        tags:
+          - portfolio
+          - protected
+        plugins:
+          - name: jwt
+          - name: oauth2
+          - name: rate-limiting
+            config:
+              minute: 300
+          - name: prometheus
+          - name: circuit-breaker
+            config:
+              timeout: 5000
+              threshold: 0.5
+
+  # Market Analysis Service
+  market-service:
+    url: ${MARKET_SERVICE_URL}
+    protocol: grpc
+    connect_timeout: 3000
+    write_timeout: 5000
+    read_timeout: 5000
+    retries: 2
+    routes:
+      - name: market_data
+        paths:
+          - /api/v1/market/data
+        methods: 
+          - GET
+        protocols: 
+          - https
+        tags:
+          - market
+          - public
+        plugins:
+          - name: cors
+          - name: rate-limiting
+            config:
+              minute: 1000
+          - name: prometheus
+          - name: response-transformer
+          - name: proxy-cache
+            config:
+              content_type:
+                - "application/json"
+              cache_ttl: 60
+              strategy: memory
+
+      - name: market_analysis
+        paths:
+          - /api/v1/market/analysis
+        methods: 
+          - GET
+          - POST
+        protocols: 
+          - https
+        tags:
+          - market
+          - protected
+        plugins:
+          - name: jwt
+          - name: rate-limiting
+            config:
+              minute: 200
+          - name: prometheus
+          - name: circuit-breaker
+
+  # Education Service
+  education-service:
+    url: ${EDUCATION_SERVICE_URL}
+    protocol: grpc
+    connect_timeout: 3000
+    write_timeout: 5000
+    read_timeout: 5000
+    retries: 2
+    routes:
+      - name: learning_content
+        paths:
+          - /api/v1/education/content
+        methods: 
+          - GET
+        protocols: 
+          - https
+        tags:
+          - education
+          - protected
+        plugins:
+          - name: jwt
+          - name: rate-limiting
+            config:
+              minute: 200
+          - name: prometheus
+          - name: proxy-cache
+            config:
+              cache_ttl: 3600
+
+  # Security Service
+  security-service:
+    url: ${SECURITY_SERVICE_URL}
+    protocol: grpc
+    connect_timeout: 2000
+    write_timeout: 4000
+    read_timeout: 4000
+    retries: 3
+    routes:
+      - name: security_alerts
+        paths:
+          - /api/v1/security/alerts
+        methods: 
+          - GET
+          - POST
+        protocols: 
+          - https
+        tags:
+          - security
+          - protected
+        plugins:
+          - name: jwt
+          - name: rate-limiting
+            config:
+              minute: 200
+          - name: prometheus
+          - name: circuit-breaker
+
+  # Community Service
+  community-service:
+    url: ${COMMUNITY_SERVICE_URL}
+    protocol: grpc
+    connect_timeout: 3000
+    write_timeout: 5000
+    read_timeout: 5000
+    retries: 2
+    routes:
+      - name: community_forum
+        paths:
+          - /api/v1/community/forum
+        methods: 
+          - GET
+          - POST
+          - PUT
+          - DELETE
+        protocols: 
+          - https
+        tags:
+          - community
+          - protected
+        plugins:
+          - name: jwt
+          - name: rate-limiting
+            config:
+              minute: 300
+          - name: prometheus
+
+# Global defaults for all routes
+defaults:
+  protocols: 
+    - https
+  preserve_host: false
+  strip_path: false
+  https_redirect_status_code: 426
+  regex_priority: 0
+  request_buffering: true
+  response_buffering: true
+  tags:
+    - bookman-ai
+    - production
+
+# Health check endpoint
+health_check:
+  active:
+    type: http
+    http_path: /health
+    timeout: 1
+    concurrency: 10
+    healthy:
+      interval: 5
+      successes: 2
+    unhealthy:
+      interval: 5
+      http_failures: 2
+      timeout: 3
