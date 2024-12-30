@@ -1,0 +1,190 @@
+_format_version: "3.0"
+
+# Global plugin configurations for the Bookman AI Platform API Gateway
+plugins:
+  # JWT Authentication Plugin Configuration
+  - name: jwt
+    config:
+      key_claim_name: kid
+      claims_to_verify:
+        - exp
+        - nbf
+        - iss
+        - sub
+      header_names:
+        - Authorization
+      cookie_names:
+        - jwt_token
+      maximum_expiration: 3600  # 1 hour
+      run_on_preflight: true
+      secret_is_base64: true
+      verify_claims: true
+      anonymous: null
+
+  # OAuth2 Authentication Plugin Configuration
+  - name: oauth2
+    config:
+      scopes:
+        - read:basic
+        - read:advanced
+        - write:basic
+        - write:advanced
+        - admin
+      mandatory_scope: true
+      token_expiration: 7200  # 2 hours
+      enable_authorization_code: true
+      enable_client_credentials: true
+      enable_password_grant: true
+      accept_http_if_already_terminated: true
+      global_credentials: false
+      refresh_token_ttl: 1209600  # 14 days
+      provision_key: ${PROVISION_KEY}
+      auth_header_name: authorization
+      hide_credentials: true
+
+  # CORS Plugin Configuration
+  - name: cors
+    config:
+      origins:
+        - https://*.bookman.ai
+        - https://bookman.ai
+      methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+        - PATCH
+      headers:
+        - Accept
+        - Accept-Version
+        - Content-Length
+        - Content-Type
+        - Authorization
+        - X-Request-ID
+        - X-API-Key
+      exposed_headers:
+        - X-Auth-Token
+        - X-Request-ID
+      credentials: true
+      max_age: 3600
+      preflight_continue: false
+      private_network: false
+
+  # Rate Limiting Plugin Configuration
+  - name: rate-limiting
+    config:
+      second: 50
+      minute: 1000
+      hour: 10000
+      day: 100000
+      month: 1000000
+      policy: redis
+      fault_tolerant: true
+      hide_client_headers: false
+      redis_timeout: 2000
+      redis_database: 0
+      redis_port: 6379
+      redis_host: ${REDIS_HOST}
+      redis_password: ${REDIS_PASSWORD}
+      redis_ssl: true
+      redis_ssl_verify: true
+
+  # Prometheus Metrics Plugin Configuration
+  - name: prometheus
+    config:
+      status_codes: true
+      latency_buckets:
+        - 10
+        - 30
+        - 50
+        - 100
+        - 200
+        - 300
+        - 500
+        - 1000
+        - 2000
+        - 5000
+      bandwidth_buckets:
+        - 10
+        - 100
+        - 1000
+        - 10000
+        - 100000
+        - 1000000
+        - 10000000
+      per_consumer: true
+      per_service: true
+      per_route: true
+      metric_prefix: bookman_
+      status_code_metrics: true
+      latency_metrics: true
+      upstream_health_metrics: true
+
+  # Request Transformer Plugin Configuration
+  - name: request-transformer
+    config:
+      add:
+        headers:
+          - "X-Request-ID:$(uuid)"
+          - "X-Service-Version:${SERVICE_VERSION}"
+          - "X-Correlation-ID:$(uuid)"
+        querystring: []
+        body: []
+      remove:
+        headers:
+          - Host
+          - X-Forwarded-For
+        querystring:
+          - api_key
+        body:
+          - password
+      rename:
+        headers: []
+        querystring: []
+      replace:
+        headers: []
+        querystring: []
+        body: []
+
+# Service-specific plugin assignments
+plugin_assignments:
+  auth_service:
+    - cors
+    - rate-limiting
+    - prometheus
+    - request-transformer
+
+  portfolio_service:
+    - jwt
+    - oauth2
+    - rate-limiting
+    - prometheus
+    - request-transformer
+
+  market_service:
+    - cors
+    - rate-limiting
+    - prometheus
+    - request-transformer
+
+  education_service:
+    - jwt
+    - oauth2
+    - rate-limiting
+    - prometheus
+    - request-transformer
+
+  security_service:
+    - jwt
+    - oauth2
+    - rate-limiting
+    - prometheus
+    - request-transformer
+
+  community_service:
+    - jwt
+    - oauth2
+    - rate-limiting
+    - prometheus
+    - request-transformer
