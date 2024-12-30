@@ -1,0 +1,231 @@
+/* ==========================================================================
+   Bookman AI Typography System
+   Implements WCAG 2.1 AA compliant typography with responsive scaling
+   ========================================================================== */
+
+@import './variables.css';
+
+/* Base Typography Settings
+   ========================================================================== */
+:root {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Global Typography Defaults
+   ========================================================================== */
+body {
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  color: var(--color-gray-900);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-display: swap;
+  text-rendering: optimizeLegibility;
+}
+
+/* Heading Typography
+   ========================================================================== */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-secondary);
+  margin-bottom: var(--spacing-4);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-tight);
+  color: var(--color-gray-900);
+}
+
+h1 {
+  font-size: var(--font-size-4xl);
+  line-height: var(--line-height-tight);
+}
+
+h2 {
+  font-size: var(--font-size-3xl);
+  line-height: var(--line-height-tight);
+}
+
+h3 {
+  font-size: var(--font-size-2xl);
+  line-height: var(--line-height-snug);
+}
+
+h4 {
+  font-size: var(--font-size-xl);
+  line-height: var(--line-height-snug);
+}
+
+h5 {
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-base);
+}
+
+h6 {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+}
+
+/* Text Size Utilities
+   ========================================================================== */
+.text-xs {
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-tight);
+  letter-spacing: 0.01em;
+}
+
+.text-sm {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-snug);
+}
+
+.text-base {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+}
+
+.text-lg {
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-relaxed);
+}
+
+.text-xl {
+  font-size: var(--font-size-xl);
+  line-height: var(--line-height-relaxed);
+}
+
+/* Font Weight Utilities
+   ========================================================================== */
+.font-normal {
+  font-weight: var(--font-weight-normal);
+}
+
+.font-medium {
+  font-weight: var(--font-weight-medium);
+}
+
+.font-semibold {
+  font-weight: var(--font-weight-semibold);
+}
+
+.font-bold {
+  font-weight: var(--font-weight-bold);
+}
+
+/* Text Direction & Internationalization
+   ========================================================================== */
+.text-rtl {
+  direction: rtl;
+  unicode-bidi: bidi-override;
+}
+
+.text-ltr {
+  direction: ltr;
+  unicode-bidi: bidi-override;
+}
+
+/* Text Truncation & Overflow
+   ========================================================================== */
+.text-truncate {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.text-nowrap {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Responsive Typography
+   ========================================================================== */
+@media screen and (max-width: var(--breakpoint-tablet)) {
+  h1 {
+    font-size: clamp(1.5rem, 5vw, 2rem);
+  }
+  
+  h2 {
+    font-size: clamp(1.25rem, 4vw, 1.75rem);
+  }
+  
+  h3 {
+    font-size: clamp(1rem, 3vw, 1.5rem);
+  }
+}
+
+@media screen and (min-width: var(--breakpoint-tablet)) and (max-width: var(--breakpoint-desktop)) {
+  h1 {
+    font-size: clamp(2rem, 6vw, 2.5rem);
+  }
+  
+  h2 {
+    font-size: clamp(1.75rem, 5vw, 2rem);
+  }
+  
+  h3 {
+    font-size: clamp(1.5rem, 4vw, 1.75rem);
+  }
+}
+
+@media screen and (min-width: var(--breakpoint-desktop)) {
+  h1 {
+    font-size: clamp(2.5rem, 7vw, 3rem);
+  }
+  
+  h2 {
+    font-size: clamp(2rem, 6vw, 2.5rem);
+  }
+  
+  h3 {
+    font-size: clamp(1.75rem, 5vw, 2rem);
+  }
+}
+
+/* Print Typography
+   ========================================================================== */
+@media print {
+  body {
+    font-size: 12pt;
+    line-height: 1.4;
+  }
+
+  h1 {
+    font-size: 24pt;
+  }
+
+  h2 {
+    font-size: 20pt;
+  }
+
+  h3 {
+    font-size: 16pt;
+  }
+
+  h4, h5, h6 {
+    font-size: 14pt;
+  }
+}
+
+/* High Contrast & Accessibility
+   ========================================================================== */
+@media (prefers-contrast: high) {
+  body {
+    line-height: var(--line-height-relaxed);
+  }
+  
+  a {
+    text-decoration-thickness: var(--border-width-thick);
+  }
+}
+
+/* Reduced Motion
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
