@@ -1,0 +1,110 @@
+# Dependencies
+node_modules/
+yarn.lock
+package-lock.json
+Cargo.lock
+
+# Build outputs
+dist/
+build/
+target/
+*.so
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing and coverage
+coverage/
+.coverage
+.pytest_cache/
+__pycache__/
+*.pyc
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+.directory
+*~
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+
+# Local development files
+.local/
+.history/
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Compiled files
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.out
+
+# Sensitive or private files
+*.pem
+*.key
+*.p12
+*.pfx
+*.cer
+*.crt
+
+# Documentation generated files
+docs/_build/
+site/
+
+# Cache directories
+.cache/
+.npm/
+.yarn/
+
+# Misc
+.env.development
+.env.test
+.env.production
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+.next/
+.nuxt/
+.vuepress/dist
+.serverless/
+.fusebox/
+.dynamodb/
