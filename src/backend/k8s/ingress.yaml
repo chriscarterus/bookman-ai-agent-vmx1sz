@@ -1,0 +1,151 @@
+# Kubernetes Ingress Configuration for Bookman AI Platform
+# Dependencies:
+# - kubernetes: v1.24+
+# - kong: v3.0+
+# - cert-manager: v1.0+
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bookman-ingress
+  namespace: bookman-system
+  labels:
+    app: bookman-ai
+    component: ingress
+    environment: production
+  annotations:
+    # Ingress Controller Configuration
+    kubernetes.io/ingress.class: kong
+    konghq.com/override: https-only
+    
+    # SSL/TLS Configuration
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    kubernetes.io/tls-acme: "true"
+    konghq.com/protocols: https
+    konghq.com/https-redirect-status-code: "301"
+    
+    # Security Headers
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-prefer-server-ciphers: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+    
+    # Kong Specific Settings
+    konghq.com/strip-path: "true"
+    konghq.com/preserve-host: "true"
+    konghq.com/proxy-connect-timeout: "60"
+    konghq.com/proxy-read-timeout: "60"
+    konghq.com/proxy-send-timeout: "60"
+    
+    # CORS Configuration
+    konghq.com/cors-origins: "https://*.bookman.ai,https://bookman.ai"
+    konghq.com/cors-methods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+    konghq.com/cors-headers: "Accept,Accept-Version,Content-Length,Content-Type,Authorization"
+    konghq.com/cors-exposed-headers: "X-Auth-Token"
+    konghq.com/cors-max-age: "3600"
+    
+    # Rate Limiting
+    konghq.com/plugins: rate-limiting,prometheus,bot-detection
+    
+    # Monitoring
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9542"
+    prometheus.io/path: "/metrics"
+
+spec:
+  ingressClassName: kong
+  tls:
+  - hosts:
+    - bookman.ai
+    - "*.bookman.ai"
+    - api.bookman.ai
+    secretName: bookman-tls
+  
+  rules:
+  # Main application domain
+  - host: bookman.ai
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway-service
+            port:
+              number: 80
+
+  # API subdomain
+  - host: api.bookman.ai
+    http:
+      paths:
+      - path: /api/v1/auth
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway-service
+            port:
+              number: 80
+      
+      - path: /api/v1/portfolio
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway-service
+            port:
+              number: 80
+      
+      - path: /api/v1/market
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway-service
+            port:
+              number: 80
+      
+      - path: /api/v1/education
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway-service
+            port:
+              number: 80
+      
+      - path: /api/v1/security
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway-service
+            port:
+              number: 80
+      
+      - path: /api/v1/community
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway-service
+            port:
+              number: 80
+
+  # Learning platform subdomain
+  - host: learn.bookman.ai
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway-service
+            port:
+              number: 80
+
+  # Admin dashboard subdomain
+  - host: admin.bookman.ai
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway-service
+            port:
+              number: 80
