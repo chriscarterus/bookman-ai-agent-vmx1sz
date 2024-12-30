@@ -1,0 +1,305 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Bookman AI Course Schema",
+  "description": "JSON Schema for cryptocurrency education courses with AI-driven content and interactive learning support",
+  "type": "object",
+  "definitions": {
+    "contentBase": {
+      "type": "object",
+      "required": ["title", "description", "duration"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 1000
+        },
+        "duration": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Duration in minutes"
+        }
+      }
+    },
+    "videoContent": {
+      "allOf": [
+        { "$ref": "#/definitions/contentBase" },
+        {
+          "type": "object",
+          "required": ["url", "transcript"],
+          "properties": {
+            "url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "transcript": {
+              "type": "string"
+            },
+            "captions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["language", "url"],
+                "properties": {
+                  "language": {
+                    "type": "string",
+                    "pattern": "^[a-z]{2}-[A-Z]{2}$"
+                  },
+                  "url": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "interactiveContent": {
+      "allOf": [
+        { "$ref": "#/definitions/contentBase" },
+        {
+          "type": "object",
+          "required": ["interaction_type", "content_data"],
+          "properties": {
+            "interaction_type": {
+              "type": "string",
+              "enum": ["simulation", "coding_exercise", "market_analysis", "portfolio_simulation"]
+            },
+            "content_data": {
+              "type": "object"
+            },
+            "completion_criteria": {
+              "type": "object",
+              "required": ["type", "threshold"],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["time_spent", "accuracy", "completion"]
+                },
+                "threshold": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "assessmentQuestion": {
+      "type": "object",
+      "required": ["id", "type", "question", "correct_answer", "points"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["multiple_choice", "true_false", "essay", "practical", "coding"]
+        },
+        "question": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 1000
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2,
+          "maxItems": 6
+        },
+        "correct_answer": {
+          "type": ["string", "array"]
+        },
+        "points": {
+          "type": "number",
+          "minimum": 1
+        },
+        "explanation": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "description",
+    "difficulty",
+    "modules",
+    "version",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 2000
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": ["beginner", "intermediate", "advanced", "expert"]
+    },
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "content_type", "content", "order"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "content_type": {
+            "type": "string",
+            "enum": ["video", "text", "quiz", "interactive", "assessment", "simulation", "ai_generated"]
+          },
+          "content": {
+            "oneOf": [
+              { "$ref": "#/definitions/videoContent" },
+              { "$ref": "#/definitions/interactiveContent" }
+            ]
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "is_required": {
+            "type": "boolean",
+            "default": true
+          },
+          "prerequisites": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            }
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 20
+    },
+    "prerequisites": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+      }
+    },
+    "estimated_duration": {
+      "type": "number",
+      "minimum": 1,
+      "description": "Estimated duration in minutes"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 30
+      },
+      "uniqueItems": true
+    },
+    "is_ai_generated": {
+      "type": "boolean",
+      "default": false
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "assessment": {
+      "type": "object",
+      "required": ["questions", "passing_score", "max_attempts"],
+      "properties": {
+        "questions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/assessmentQuestion"
+          },
+          "minItems": 1
+        },
+        "passing_score": {
+          "type": "number",
+          "minimum": 70,
+          "maximum": 100
+        },
+        "max_attempts": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "time_limit": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Time limit in minutes"
+        }
+      }
+    },
+    "learning_path": {
+      "type": "object",
+      "required": ["id", "name", "courses"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "courses": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+          }
+        },
+        "ai_recommended": {
+          "type": "boolean",
+          "default": false
+        },
+        "adaptive_path": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
