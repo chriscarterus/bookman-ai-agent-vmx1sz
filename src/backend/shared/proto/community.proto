@@ -1,0 +1,154 @@
+syntax = "proto3";
+
+package bookman.community;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "./auth.proto";
+
+// Service version and options
+option go_package = "github.com/bookman/community/proto";
+option java_package = "com.bookman.community.proto";
+option java_multiple_files = true;
+
+// Post types enum matching schema definition
+enum PostType {
+  POST_TYPE_UNSPECIFIED = 0;
+  POST_TYPE_DISCUSSION = 1;
+  POST_TYPE_QUESTION = 2;
+  POST_TYPE_ANALYSIS = 3;
+  POST_TYPE_ANNOUNCEMENT = 4;
+}
+
+// Visibility types for posts
+enum VisibilityType {
+  VISIBILITY_TYPE_UNSPECIFIED = 0;
+  VISIBILITY_TYPE_PUBLIC = 1;
+  VISIBILITY_TYPE_PRIVATE = 2;
+  VISIBILITY_TYPE_PREMIUM = 3;
+}
+
+// Enhanced post message with security and validation features
+message Post {
+  string id = 1;
+  string title = 2;  // Max length: 200
+  string content = 3;  // Max length: 10000
+  string author_id = 4;
+  PostType type = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  int32 likes_count = 8;
+  int32 comments_count = 9;
+  repeated string tags = 10;  // Max 10 tags, each max 50 chars
+  VisibilityType visibility = 11;
+  float spam_score = 12;
+  bool is_edited = 13;
+  bool is_pinned = 14;
+  repeated string mentions = 15;
+}
+
+// Create post request with validation
+message CreatePostRequest {
+  string title = 1;
+  string content = 2;
+  PostType type = 3;
+  repeated string tags = 4;
+  VisibilityType visibility = 5;
+  repeated string mentions = 6;
+}
+
+message CreatePostResponse {
+  Post post = 1;
+  bool requires_moderation = 2;
+  repeated string validation_warnings = 3;
+}
+
+message GetPostRequest {
+  string post_id = 1;
+}
+
+message GetPostResponse {
+  Post post = 1;
+  bool is_author = 2;
+  bool can_edit = 3;
+  bool can_delete = 4;
+}
+
+message ListPostsRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+  PostType type_filter = 3;
+  string author_id = 4;
+  string tag_filter = 5;
+  string search_query = 6;
+  bool include_private = 7;
+}
+
+message ListPostsResponse {
+  repeated Post posts = 1;
+  string next_page_token = 2;
+  int32 total_count = 3;
+}
+
+message UpdatePostRequest {
+  string post_id = 1;
+  string title = 2;
+  string content = 3;
+  repeated string tags = 4;
+  VisibilityType visibility = 5;
+}
+
+message UpdatePostResponse {
+  Post post = 1;
+  bool requires_moderation = 2;
+  repeated string validation_warnings = 3;
+}
+
+message DeletePostRequest {
+  string post_id = 1;
+  string deletion_reason = 2;
+}
+
+message LikePostRequest {
+  string post_id = 1;
+}
+
+message UnlikePostRequest {
+  string post_id = 1;
+}
+
+message ReportPostRequest {
+  string post_id = 1;
+  string reason = 2;
+  string details = 3;
+}
+
+message ReportPostResponse {
+  string report_id = 1;
+  bool requires_immediate_action = 2;
+}
+
+// Enhanced community service with security and validation
+service CommunityService {
+  // Create a new post with validation
+  rpc CreatePost(CreatePostRequest) returns (CreatePostResponse) {}
+  
+  // Get post details with security checks
+  rpc GetPost(GetPostRequest) returns (GetPostResponse) {}
+  
+  // List posts with filtering and pagination
+  rpc ListPosts(ListPostsRequest) returns (ListPostsResponse) {}
+  
+  // Update existing post with validation
+  rpc UpdatePost(UpdatePostRequest) returns (UpdatePostResponse) {}
+  
+  // Delete post with reason tracking
+  rpc DeletePost(DeletePostRequest) returns (google.protobuf.Empty) {}
+  
+  // Like/unlike post management
+  rpc LikePost(LikePostRequest) returns (google.protobuf.Empty) {}
+  rpc UnlikePost(UnlikePostRequest) returns (google.protobuf.Empty) {}
+  
+  // Report inappropriate content
+  rpc ReportPost(ReportPostRequest) returns (ReportPostResponse) {}
+}
