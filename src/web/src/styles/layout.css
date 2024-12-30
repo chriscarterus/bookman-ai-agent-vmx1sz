@@ -1,0 +1,215 @@
+/* ==========================================================================
+   Bookman AI Platform Layout Styles
+   Implements responsive grid system and structural components
+   Version: 1.0.0
+   ========================================================================== */
+
+@import './variables.css';
+
+/* ==========================================================================
+   Base Grid Container
+   12-column fluid grid with performance optimizations
+   ========================================================================== */
+
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--spacing-4);
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  padding: 0 var(--spacing-4);
+  contain: layout style;
+}
+
+/* ==========================================================================
+   App Layout Structure
+   Main application layout with navigation, content, and side panel
+   ========================================================================== */
+
+.app-layout {
+  display: grid;
+  grid-template-areas: 'nav main side';
+  grid-template-columns: auto 1fr auto;
+  min-height: 100vh;
+  background-color: var(--color-gray-50);
+  contain: layout style;
+}
+
+/* Navigation Sidebar */
+.app-navigation {
+  grid-area: nav;
+  width: 280px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: var(--spacing-4);
+  background: var(--color-white);
+  border-right: var(--border-width-thin) solid var(--color-gray-200);
+  z-index: var(--z-index-sticky);
+  will-change: transform;
+  transform: translateZ(0);
+  contain: layout style paint;
+  content-visibility: auto;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Main Content Area */
+.main-content {
+  grid-area: main;
+  padding: var(--spacing-4);
+  min-width: 0;
+  overflow-x: hidden;
+  background: var(--color-white);
+  contain: layout style;
+  content-visibility: auto;
+  contain-intrinsic-size: 1000px;
+}
+
+/* Side Panel */
+.side-panel {
+  grid-area: side;
+  width: 320px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: var(--spacing-4);
+  background: var(--color-white);
+  border-left: var(--border-width-thin) solid var(--color-gray-200);
+  z-index: var(--z-index-sticky);
+  will-change: transform;
+  transform: translateZ(0);
+  contain: layout style paint;
+  content-visibility: auto;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Dashboard Grid Layout */
+.dashboard-grid {
+  display: grid;
+  gap: var(--spacing-4);
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  contain: layout style;
+  content-visibility: auto;
+}
+
+/* ==========================================================================
+   Responsive Breakpoints
+   Mobile-first approach with smooth transitions
+   ========================================================================== */
+
+/* Small Mobile (<320px) */
+@media screen and (max-width: var(--breakpoint-mobile)) {
+  .app-layout {
+    grid-template-areas: 
+      'nav'
+      'main'
+      'side';
+    grid-template-columns: 1fr;
+    gap: var(--spacing-2);
+  }
+
+  .app-navigation,
+  .side-panel {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+
+  .grid-container {
+    padding: 0 var(--spacing-2);
+  }
+}
+
+/* Mobile (320px - 768px) */
+@media screen and (min-width: var(--breakpoint-mobile)) and (max-width: var(--breakpoint-tablet)) {
+  .app-layout {
+    grid-template-areas: 
+      'nav'
+      'main'
+      'side';
+    grid-template-columns: 1fr;
+    gap: var(--spacing-3);
+  }
+
+  .app-navigation,
+  .side-panel {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tablet (768px - 1024px) */
+@media screen and (min-width: var(--breakpoint-tablet)) and (max-width: var(--breakpoint-desktop)) {
+  .app-layout {
+    grid-template-areas: 
+      'nav main'
+      'side main';
+    grid-template-columns: auto 1fr;
+    gap: var(--spacing-4);
+  }
+
+  .app-navigation,
+  .side-panel {
+    width: 240px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+}
+
+/* Desktop (≥1024px) */
+@media screen and (min-width: var(--breakpoint-desktop)) {
+  .app-layout {
+    grid-template-areas: 'nav main side';
+    grid-template-columns: auto 1fr auto;
+    gap: var(--spacing-4);
+  }
+}
+
+/* ==========================================================================
+   Print Styles
+   Optimized layout for printed pages
+   ========================================================================== */
+
+@media print {
+  .app-layout {
+    grid-template-areas: 'main';
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .app-navigation,
+  .side-panel {
+    display: none;
+  }
+
+  .main-content {
+    padding: 0;
+  }
+}
+
+/* ==========================================================================
+   High Contrast & Reduced Motion
+   Accessibility considerations
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .app-navigation,
+  .side-panel {
+    will-change: auto;
+    transform: none;
+  }
+}
+
+@media (prefers-contrast: high) {
+  .app-navigation,
+  .side-panel {
+    border-color: var(--color-black);
+  }
+}
