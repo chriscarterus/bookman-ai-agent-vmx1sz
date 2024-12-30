@@ -1,0 +1,175 @@
+name: Deploy to Staging Environment
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+    inputs:
+      deploy_version:
+        description: 'Version to deploy'
+        required: true
+        type: string
+
+# Ensure concurrent deployments are handled safely
+concurrency:
+  group: staging
+  cancel-in-progress: true
+
+# Required permissions for AWS, OIDC, and security scanning
+permissions:
+  id-token: write
+  contents: read
+  packages: write
+  security-events: write
+
+env:
+  ENVIRONMENT: staging
+  AWS_REGION: us-west-2
+  CLUSTER_NAME: bookman-staging
+  MONITORING_ENABLED: 'true'
+  ENABLE_CANARY: 'true'
+  KONG_VERSION: '3.0'
+  ISTIO_VERSION: '1.18'
+
+jobs:
+  security_scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Run Snyk Container Scan
+        uses: snyk/actions/docker@v2
+        with:
+          image: ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
+          args: --severity-threshold=high
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@v1
+        with:
+          scan-type: 'image'
+          image-ref: ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  infrastructure_validation:
+    name: Infrastructure Validation
+    runs-on: ubuntu-latest
+    needs: security_scan
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.24.0'
+
+      - name: Validate Kubernetes manifests
+        run: |
+          kubectl apply --dry-run=client -f src/backend/k8s/api-gateway.yaml
+          kubectl apply --dry-run=client -f src/backend/k8s/service-mesh.yaml
+
+      - name: Validate Kong configuration
+        run: |
+          deck validate -s src/backend/api-gateway/kong.yml
+          deck validate -s src/backend/api-gateway/plugins.yml
+          deck validate -s src/backend/api-gateway/routes.yml
+
+      - name: Validate Istio configuration
+        run: |
+          istioctl validate -f src/backend/k8s/service-mesh.yaml
+
+  deploy:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [security_scan, infrastructure_validation]
+    environment:
+      name: staging
+      url: https://staging.bookman-ai.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
+
+      - name: Deploy Service Mesh
+        run: |
+          kubectl apply -f src/backend/k8s/service-mesh.yaml
+          kubectl wait --for=condition=available deployment -l app=istiod -n istio-system --timeout=300s
+
+      - name: Deploy API Gateway
+        run: |
+          kubectl apply -f src/backend/k8s/api-gateway.yaml
+          kubectl wait --for=condition=available deployment/api-gateway-deployment -n bookman-system --timeout=300s
+
+      - name: Configure Kong Gateway
+        run: |
+          kubectl create configmap kong-config \
+            --from-file=kong.yml=src/backend/api-gateway/kong.yml \
+            --from-file=plugins.yml=src/backend/api-gateway/plugins.yml \
+            --from-file=routes.yml=src/backend/api-gateway/routes.yml \
+            -n bookman-system --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy with Canary
+        if: ${{ env.ENABLE_CANARY == 'true' }}
+        uses: azure/k8s-deploy@v4
+        with:
+          manifests: |
+            src/backend/k8s/api-gateway.yaml
+            src/backend/k8s/service-mesh.yaml
+          strategy: canary
+          percentage: 20
+          traffic-split-method: pod
+          
+      - name: Verify Deployment Health
+        run: |
+          kubectl wait --for=condition=available deployment -l app=api-gateway -n bookman-system --timeout=300s
+          curl -f https://staging.bookman-ai.com/health || exit 1
+
+      - name: Configure Monitoring
+        if: ${{ env.MONITORING_ENABLED == 'true' }}
+        run: |
+          kubectl apply -f monitoring/prometheus-rules.yaml
+          kubectl apply -f monitoring/grafana-dashboards.yaml
+
+      - name: Notify Deployment Status
+        if: always()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { status, conclusion } = context.job
+            const message = `Deployment to staging ${conclusion === 'success' ? 'succeeded' : 'failed'}`
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            })
