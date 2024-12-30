@@ -1,0 +1,240 @@
+syntax = "proto3";
+
+package portfolio;
+
+// Import external dependencies
+import "google/protobuf/timestamp.proto";
+
+// Go package declaration
+option go_package = "github.com/bookman/portfolio-service/proto";
+
+// Portfolio represents a comprehensive portfolio data structure with enhanced tracking capabilities
+message Portfolio {
+  string portfolio_id = 1;
+  string user_id = 2;
+  string name = 3;
+  string description = 4;
+  double total_value = 5;
+  double total_profit_loss = 6;
+  double total_profit_loss_percentage = 7;
+  repeated Asset assets = 8;
+  map<string, double> asset_allocation = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp updated_at = 11;
+  string risk_level = 12;
+  map<string, string> metadata = 13;
+}
+
+// Asset represents detailed asset information with real-time tracking and performance metrics
+message Asset {
+  string asset_id = 1;
+  string portfolio_id = 2;
+  string symbol = 3;
+  string name = 4;
+  string asset_type = 5;
+  double quantity = 6;
+  double average_buy_price = 7;
+  double current_price = 8;
+  double total_value = 9;
+  double profit_loss = 10;
+  double profit_loss_percentage = 11;
+  double allocation_percentage = 12;
+  google.protobuf.Timestamp last_updated = 13;
+  map<string, double> historical_prices = 14;
+  map<string, string> metadata = 15;
+}
+
+// Transaction types for comprehensive tracking
+enum TransactionType {
+  TRANSACTION_TYPE_UNSPECIFIED = 0;
+  TRANSACTION_TYPE_BUY = 1;
+  TRANSACTION_TYPE_SELL = 2;
+  TRANSACTION_TYPE_TRANSFER_IN = 3;
+  TRANSACTION_TYPE_TRANSFER_OUT = 4;
+  TRANSACTION_TYPE_STAKE = 5;
+  TRANSACTION_TYPE_UNSTAKE = 6;
+  TRANSACTION_TYPE_REWARD = 7;
+  TRANSACTION_TYPE_FEE = 8;
+}
+
+// Transaction represents a comprehensive transaction record with enhanced tracking and categorization
+message Transaction {
+  string transaction_id = 1;
+  string portfolio_id = 2;
+  string asset_id = 3;
+  TransactionType type = 4;
+  string transaction_status = 5;
+  double quantity = 6;
+  double price = 7;
+  double total_amount = 8;
+  double fee = 9;
+  string fee_currency = 10;
+  google.protobuf.Timestamp timestamp = 11;
+  string notes = 12;
+  string transaction_hash = 13;
+  map<string, string> metadata = 14;
+}
+
+// PerformanceMetrics represents detailed performance analytics with multiple timeframe support
+message PerformanceMetrics {
+  string portfolio_id = 1;
+  string time_period = 2;
+  double start_value = 3;
+  double end_value = 4;
+  double profit_loss = 5;
+  double profit_loss_percentage = 6;
+  double annualized_return = 7;
+  double volatility = 8;
+  double sharpe_ratio = 9;
+  double max_drawdown = 10;
+  map<string, double> daily_returns = 11;
+  map<string, double> asset_performance = 12;
+  google.protobuf.Timestamp start_date = 13;
+  google.protobuf.Timestamp end_date = 14;
+  map<string, double> benchmark_comparison = 15;
+}
+
+// Request/Response messages for service methods
+message CreatePortfolioRequest {
+  string user_id = 1;
+  string name = 2;
+  string description = 3;
+  string risk_level = 4;
+  map<string, string> metadata = 5;
+}
+
+message CreatePortfolioResponse {
+  Portfolio portfolio = 1;
+}
+
+message GetPortfolioRequest {
+  string portfolio_id = 1;
+}
+
+message GetPortfolioResponse {
+  Portfolio portfolio = 1;
+}
+
+message UpdatePortfolioRequest {
+  Portfolio portfolio = 1;
+}
+
+message UpdatePortfolioResponse {
+  Portfolio portfolio = 1;
+}
+
+message DeletePortfolioRequest {
+  string portfolio_id = 1;
+}
+
+message DeletePortfolioResponse {
+  bool success = 1;
+}
+
+message ListPortfoliosRequest {
+  string user_id = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+message ListPortfoliosResponse {
+  repeated Portfolio portfolios = 1;
+  string next_page_token = 2;
+}
+
+message AddAssetRequest {
+  string portfolio_id = 1;
+  Asset asset = 2;
+}
+
+message AddAssetResponse {
+  Asset asset = 1;
+}
+
+message UpdateAssetRequest {
+  Asset asset = 1;
+}
+
+message UpdateAssetResponse {
+  Asset asset = 1;
+}
+
+message RemoveAssetRequest {
+  string portfolio_id = 1;
+  string asset_id = 2;
+}
+
+message RemoveAssetResponse {
+  bool success = 1;
+}
+
+message RecordTransactionRequest {
+  Transaction transaction = 1;
+}
+
+message RecordTransactionResponse {
+  Transaction transaction = 1;
+}
+
+message GetTransactionsRequest {
+  string portfolio_id = 1;
+  string asset_id = 2;
+  google.protobuf.Timestamp start_date = 3;
+  google.protobuf.Timestamp end_date = 4;
+  int32 page_size = 5;
+  string page_token = 6;
+}
+
+message GetTransactionsResponse {
+  repeated Transaction transactions = 1;
+  string next_page_token = 2;
+}
+
+message GetPerformanceMetricsRequest {
+  string portfolio_id = 1;
+  string time_period = 2;
+  google.protobuf.Timestamp start_date = 3;
+  google.protobuf.Timestamp end_date = 4;
+}
+
+message GetPerformanceMetricsResponse {
+  PerformanceMetrics metrics = 1;
+}
+
+message PortfolioUpdate {
+  Portfolio portfolio = 1;
+  google.protobuf.Timestamp timestamp = 2;
+}
+
+message AssetPriceUpdate {
+  string asset_id = 1;
+  string symbol = 2;
+  double price = 3;
+  google.protobuf.Timestamp timestamp = 4;
+}
+
+// PortfolioService provides comprehensive portfolio management capabilities with real-time updates
+service PortfolioService {
+  // Portfolio management
+  rpc CreatePortfolio(CreatePortfolioRequest) returns (CreatePortfolioResponse);
+  rpc GetPortfolio(GetPortfolioRequest) returns (GetPortfolioResponse);
+  rpc UpdatePortfolio(UpdatePortfolioRequest) returns (UpdatePortfolioResponse);
+  rpc DeletePortfolio(DeletePortfolioRequest) returns (DeletePortfolioResponse);
+  rpc ListPortfolios(ListPortfoliosRequest) returns (ListPortfoliosResponse);
+
+  // Asset management
+  rpc AddAsset(AddAssetRequest) returns (AddAssetResponse);
+  rpc UpdateAsset(UpdateAssetRequest) returns (UpdateAssetResponse);
+  rpc RemoveAsset(RemoveAssetRequest) returns (RemoveAssetResponse);
+
+  // Transaction management
+  rpc RecordTransaction(RecordTransactionRequest) returns (RecordTransactionResponse);
+  rpc GetTransactions(GetTransactionsRequest) returns (GetTransactionsResponse);
+
+  // Performance analytics
+  rpc GetPerformanceMetrics(GetPerformanceMetricsRequest) returns (GetPerformanceMetricsResponse);
+
+  // Real-time streaming
+  rpc StreamPortfolioUpdates(GetPortfolioRequest) returns (stream PortfolioUpdate);
+  rpc StreamAssetPrices(GetPortfolioRequest) returns (stream AssetPriceUpdate);
+}
