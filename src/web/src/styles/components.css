@@ -1,0 +1,252 @@
+/* ==========================================================================
+   Bookman AI Component Styles
+   Implements WCAG 2.1 AA compliant, responsive component styles
+   ========================================================================== */
+
+@import './variables.css';
+
+/* ==========================================================================
+   Button Components
+   ========================================================================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: var(--border-radius-md);
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  min-height: 44px;
+  min-width: 44px;
+  transition: var(--transition-base);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+  will-change: transform;
+  contain: layout style paint;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn:active {
+  transform: translateY(1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn:focus-visible {
+  outline: var(--border-width-thick) solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Button Variants */
+.btn--primary {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.btn--secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-white);
+}
+
+.btn--outline {
+  background-color: transparent;
+  border: var(--border-width-thin) solid var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* ==========================================================================
+   Card Components
+   ========================================================================== */
+
+.card {
+  background-color: var(--color-white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-4);
+  transition: var(--transition-base);
+  position: relative;
+  overflow: hidden;
+  contain: content;
+  will-change: transform, opacity;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.card--loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.card--interactive {
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   Form Components
+   ========================================================================== */
+
+.input {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--spacing-2) var(--spacing-3);
+  border: var(--border-width-thin) solid var(--color-gray-300);
+  border-radius: var(--border-radius-md);
+  background-color: var(--color-white);
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  transition: var(--transition-base);
+}
+
+.input:hover {
+  border-color: var(--color-gray-400);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 var(--border-width-thin) var(--color-primary-light);
+}
+
+.input:disabled {
+  background-color: var(--color-gray-100);
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Navigation Components
+   ========================================================================== */
+
+.nav {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-4);
+  background-color: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.nav__item {
+  padding: var(--spacing-2) var(--spacing-4);
+  color: var(--color-gray-700);
+  text-decoration: none;
+  transition: var(--transition-base);
+}
+
+.nav__item:hover {
+  color: var(--color-primary);
+}
+
+.nav__item--active {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ==========================================================================
+   Responsive Breakpoints
+   ========================================================================== */
+
+@media screen and (max-width: 767px) {
+  .btn {
+    padding: var(--spacing-2) var(--spacing-3);
+    min-height: 48px;
+    width: 100%;
+  }
+
+  .card {
+    padding: var(--spacing-3);
+    margin: var(--spacing-2);
+  }
+
+  .nav {
+    flex-direction: column;
+    padding: var(--spacing-2);
+  }
+
+  .nav__item {
+    width: 100%;
+    padding: var(--spacing-3);
+    text-align: center;
+  }
+}
+
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+  .card {
+    padding: var(--spacing-4);
+    margin: var(--spacing-3);
+  }
+
+  .nav {
+    padding: var(--spacing-4);
+  }
+}
+
+@media screen and (min-width: 1024px) {
+  .card {
+    padding: var(--spacing-6);
+    margin: var(--spacing-4);
+  }
+
+  .nav {
+    padding: var(--spacing-4) var(--spacing-8);
+  }
+}
+
+/* ==========================================================================
+   Accessibility Enhancements
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .card,
+  .input,
+  .nav__item {
+    transition: none;
+    transform: none;
+    animation: none;
+  }
+}
+
+/* High Contrast Mode Support */
+@media (forced-colors: active) {
+  .btn,
+  .card,
+  .input,
+  .nav__item {
+    border: var(--border-width-thick) solid currentColor;
+  }
+}
+
+/* Focus Visible Polyfill */
+.js-focus-visible :focus:not(.focus-visible) {
+  outline: none;
+}
+
+/* Screen Reader Only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
