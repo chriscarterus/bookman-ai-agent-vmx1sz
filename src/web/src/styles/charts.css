@@ -1,0 +1,219 @@
+/* ==========================================================================
+   Bookman AI Chart Styles
+   Provides comprehensive styling for financial data visualization components
+   Implements WCAG 2.1 AA compliant design with theme support
+   ========================================================================== */
+
+@import '../styles/variables.css';
+
+/* Chart Custom Properties
+   ========================================================================== */
+:root {
+  /* Chart Dimensions */
+  --chart-height-sm: 200px;
+  --chart-height-md: 300px;
+  --chart-height-lg: 400px;
+
+  /* Theme-aware Colors */
+  --chart-grid-color-light: rgba(0, 0, 0, 0.1);
+  --chart-grid-color-dark: rgba(255, 255, 255, 0.1);
+  --chart-tooltip-bg-light: var(--color-white);
+  --chart-tooltip-bg-dark: var(--color-gray-800);
+  --chart-positive-color: var(--color-secondary);
+  --chart-negative-color: #EF4444;
+  
+  /* Visual Properties */
+  --chart-area-opacity: 0.2;
+  --chart-line-width: 1px;
+  --chart-animation-duration: 300ms;
+  --chart-tooltip-shadow: var(--shadow-base);
+  --chart-border-radius: var(--border-radius-md);
+  --chart-transition: all var(--chart-animation-duration) ease-in-out;
+}
+
+/* Base Chart Container
+   ========================================================================== */
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: var(--chart-height-md);
+  margin: var(--spacing-4) 0;
+  contain: layout size;
+  overflow: hidden;
+  border-radius: var(--chart-border-radius);
+  background-color: var(--color-gray-50);
+  transition: var(--chart-transition);
+}
+
+/* Responsive Chart Sizes
+   ========================================================================== */
+.chart-container--small {
+  height: var(--chart-height-sm);
+  margin: var(--spacing-2) 0;
+}
+
+.chart-container--large {
+  height: var(--chart-height-lg);
+  margin: var(--spacing-6) 0;
+}
+
+/* Chart Grid Styling
+   ========================================================================== */
+.chart-grid {
+  stroke: var(--chart-grid-color-light);
+  stroke-width: var(--chart-line-width);
+  shape-rendering: crispEdges;
+  pointer-events: none;
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .chart-grid {
+    stroke: var(--chart-grid-color-dark);
+  }
+  
+  .chart-container {
+    background-color: var(--color-gray-900);
+  }
+}
+
+/* Chart Types
+   ========================================================================== */
+.chart-line {
+  fill: none;
+  stroke-width: var(--chart-line-width);
+  vector-effect: non-scaling-stroke;
+  transition: var(--chart-transition);
+}
+
+.chart-area {
+  fill-opacity: var(--chart-area-opacity);
+  transition: var(--chart-transition);
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-candlestick {
+  stroke-width: var(--chart-line-width);
+  transition: var(--chart-transition);
+}
+
+.chart-pie {
+  transition: var(--chart-transition);
+}
+
+.chart-pie__slice {
+  transition: transform 0.2s ease-out;
+}
+
+.chart-pie__slice:hover {
+  transform: scale(1.02);
+}
+
+/* Chart Value Indicators
+   ========================================================================== */
+.chart-value--positive {
+  color: var(--chart-positive-color);
+  fill: var(--chart-positive-color);
+  stroke: var(--chart-positive-color);
+}
+
+.chart-value--negative {
+  color: var(--chart-negative-color);
+  fill: var(--chart-negative-color);
+  stroke: var(--chart-negative-color);
+}
+
+/* Chart Tooltip
+   ========================================================================== */
+.chart-tooltip {
+  position: absolute;
+  background: var(--chart-tooltip-bg-light);
+  border-radius: var(--chart-border-radius);
+  padding: var(--spacing-2);
+  box-shadow: var(--chart-tooltip-shadow);
+  transition: var(--chart-transition);
+  z-index: var(--z-index-tooltip);
+  pointer-events: none;
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-sm);
+}
+
+@media (prefers-color-scheme: dark) {
+  .chart-tooltip {
+    background: var(--chart-tooltip-bg-dark);
+    color: var(--color-white);
+  }
+}
+
+/* Chart Axes
+   ========================================================================== */
+.chart-axis {
+  color: var(--color-gray-600);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-family-primary);
+}
+
+.chart-axis__line {
+  stroke: var(--chart-grid-color-light);
+  stroke-width: var(--chart-line-width);
+}
+
+/* Responsive Breakpoints
+   ========================================================================== */
+@media (max-width: var(--breakpoint-mobile)) {
+  .chart-container {
+    height: var(--chart-height-sm);
+  }
+  
+  .chart-axis {
+    font-size: calc(var(--font-size-xs) * 0.9);
+  }
+}
+
+@media (min-width: var(--breakpoint-tablet)) {
+  .chart-container {
+    height: var(--chart-height-md);
+  }
+}
+
+@media (min-width: var(--breakpoint-desktop)) {
+  .chart-container--large {
+    height: var(--chart-height-lg);
+  }
+}
+
+/* Chart Animations
+   ========================================================================== */
+@keyframes chartFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.chart-animate-in {
+  animation: chartFadeIn var(--chart-animation-duration) ease-out;
+}
+
+/* Chart Loading State
+   ========================================================================== */
+.chart-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.8);
+  transition: var(--chart-transition);
+}
+
+@media (prefers-color-scheme: dark) {
+  .chart-loading {
+    background-color: rgba(0, 0, 0, 0.8);
+  }
+}
