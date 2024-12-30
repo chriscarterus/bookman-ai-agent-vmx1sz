@@ -1,0 +1,77 @@
+{
+  "compilerOptions": {
+    // ECMAScript Target and Module Configuration
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+
+    // Output Configuration
+    "outDir": "./dist",
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "@auth/*": ["auth-service/src/*"],
+      "@community/*": ["community-service/src/*"]
+    },
+
+    // Project References and Declaration Configuration
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+
+    // Strict Type Checking
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noEmitOnError": true,
+    "allowUnreachableCode": false,
+
+    // Module Resolution and Compatibility
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+
+    // Decorator Support
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
+    // Build Optimization
+    "incremental": true,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "preserveWatchOutput": true
+  },
+
+  // Project References
+  "references": [
+    {
+      "path": "./auth-service"
+    },
+    {
+      "path": "./community-service"
+    }
+  ],
+
+  // File Inclusion/Exclusion
+  "include": [
+    "auth-service/src/**/*",
+    "community-service/src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "coverage"
+  ],
+
+  // TypeScript Version Compatibility
+  "typescript": {
+    "version": "5.0.4"
+  }
+}
