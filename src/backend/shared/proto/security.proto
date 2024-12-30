@@ -1,0 +1,238 @@
+syntax = "proto3";
+
+package bookman.security;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "./auth.proto";
+
+// Service version and package options
+option go_package = "github.com/bookman/security/proto";
+option java_package = "com.bookman.security.proto";
+option java_multiple_files = true;
+
+// Enhanced security service for fraud detection and smart contract auditing
+service SecurityService {
+  // Enhanced fraud detection with ML-based analysis
+  rpc DetectFraud(EnhancedFraudDetectionRequest) returns (FraudDetectionResponse) {}
+  
+  // Comprehensive smart contract security audit
+  rpc AuditSmartContract(SmartContractAuditRequest) returns (SmartContractAuditResponse) {}
+  
+  // Real-time security alert streaming
+  rpc StreamSecurityAlerts(AlertStreamRequest) returns (stream SecurityAlert) {}
+  
+  // Batch security scan for multiple assets
+  rpc BatchSecurityScan(BatchSecurityScanRequest) returns (BatchSecurityScanResponse) {}
+  
+  // Monitor security events in real-time
+  rpc MonitorSecurityEvents(SecurityMonitorRequest) returns (stream SecurityEvent) {}
+}
+
+// Enhanced fraud detection request with context
+message EnhancedFraudDetectionRequest {
+  bytes transaction_data = 1;
+  TransactionContext context = 2;
+  float risk_threshold = 3;
+  bool include_historical_data = 4;
+  repeated string analysis_types = 5;
+  SecurityScanConfig scan_config = 6;
+}
+
+// Transaction context for fraud detection
+message TransactionContext {
+  string user_id = 1;
+  string transaction_type = 2;
+  float amount = 3;
+  string currency = 4;
+  google.protobuf.Timestamp timestamp = 5;
+  Location location = 6;
+  map<string, string> metadata = 7;
+}
+
+// Fraud detection response with detailed analysis
+message FraudDetectionResponse {
+  bool is_fraudulent = 1;
+  float risk_score = 2;
+  repeated RiskFactor risk_factors = 3;
+  string analysis_id = 4;
+  google.protobuf.Timestamp analysis_timestamp = 5;
+  repeated RecommendedAction recommended_actions = 6;
+  map<string, float> confidence_scores = 7;
+}
+
+// Risk factor details
+message RiskFactor {
+  string factor_type = 1;
+  float severity = 2;
+  string description = 3;
+  repeated string evidence = 4;
+}
+
+// Smart contract audit request
+message SmartContractAuditRequest {
+  bytes contract_code = 1;
+  string blockchain_platform = 2;
+  repeated string audit_types = 3;
+  SecurityScanConfig scan_config = 4;
+  map<string, string> contract_metadata = 5;
+}
+
+// Smart contract audit response
+message SmartContractAuditResponse {
+  string audit_id = 1;
+  AuditStatus status = 2;
+  repeated Vulnerability vulnerabilities = 3;
+  ComplianceReport compliance_report = 4;
+  google.protobuf.Timestamp completion_time = 5;
+  repeated string audit_logs = 6;
+  GasAnalysis gas_analysis = 7;
+}
+
+// Vulnerability details
+message Vulnerability {
+  string vulnerability_id = 1;
+  SeverityLevel severity = 2;
+  string title = 3;
+  string description = 4;
+  Location code_location = 5;
+  repeated string remediation_steps = 6;
+  string cwe_id = 7;
+}
+
+// Security alert stream request
+message AlertStreamRequest {
+  string user_id = 1;
+  repeated AlertType alert_types = 2;
+  SeverityLevel minimum_severity = 3;
+  repeated string asset_ids = 4;
+  AlertFilterConfig filter_config = 5;
+}
+
+// Security alert message
+message SecurityAlert {
+  string alert_id = 1;
+  AlertType alert_type = 2;
+  SeverityLevel severity = 3;
+  string description = 4;
+  google.protobuf.Timestamp detection_time = 5;
+  repeated string affected_assets = 6;
+  map<string, string> alert_metadata = 7;
+  repeated RecommendedAction recommended_actions = 8;
+}
+
+// Batch security scan request
+message BatchSecurityScanRequest {
+  repeated string asset_ids = 1;
+  SecurityScanConfig scan_config = 2;
+  bool parallel_execution = 3;
+  int32 max_concurrent_scans = 4;
+}
+
+// Batch security scan response
+message BatchSecurityScanResponse {
+  string batch_id = 1;
+  map<string, ScanResult> scan_results = 2;
+  google.protobuf.Timestamp completion_time = 3;
+  BatchScanStats scan_stats = 4;
+}
+
+// Security scan configuration
+message SecurityScanConfig {
+  repeated string enabled_checks = 1;
+  map<string, string> scan_parameters = 2;
+  int32 timeout_seconds = 3;
+  bool deep_scan = 4;
+}
+
+// Recommended security action
+message RecommendedAction {
+  string action_id = 1;
+  string description = 2;
+  ActionPriority priority = 3;
+  repeated string implementation_steps = 4;
+}
+
+// Compliance report
+message ComplianceReport {
+  repeated ComplianceStandard standards_checked = 1;
+  map<string, bool> compliance_status = 2;
+  repeated string violations = 3;
+  repeated string recommendations = 4;
+}
+
+// Gas analysis for smart contracts
+message GasAnalysis {
+  uint64 deployment_cost = 1;
+  map<string, uint64> function_costs = 2;
+  repeated GasOptimization optimization_suggestions = 3;
+}
+
+// Gas optimization suggestion
+message GasOptimization {
+  string description = 1;
+  uint64 potential_savings = 2;
+  string code_reference = 3;
+}
+
+// Batch scan statistics
+message BatchScanStats {
+  int32 total_scans = 1;
+  int32 successful_scans = 2;
+  int32 failed_scans = 3;
+  float average_scan_time = 4;
+  map<string, int32> error_distribution = 5;
+}
+
+// Location in code
+message Location {
+  string file_path = 1;
+  int32 line_number = 2;
+  int32 column_number = 3;
+  string context = 4;
+}
+
+// Enums
+enum SeverityLevel {
+  SEVERITY_UNSPECIFIED = 0;
+  LOW = 1;
+  MEDIUM = 2;
+  HIGH = 3;
+  CRITICAL = 4;
+  EMERGENCY = 5;
+}
+
+enum AlertType {
+  ALERT_TYPE_UNSPECIFIED = 0;
+  FRAUD_DETECTED = 1;
+  VULNERABILITY_FOUND = 2;
+  SUSPICIOUS_ACTIVITY = 3;
+  COMPLIANCE_VIOLATION = 4;
+  SYSTEM_SECURITY = 5;
+}
+
+enum AuditStatus {
+  AUDIT_STATUS_UNSPECIFIED = 0;
+  PENDING = 1;
+  IN_PROGRESS = 2;
+  SCANNING = 3;
+  ANALYZING = 4;
+  COMPLETED = 5;
+  FAILED = 6;
+}
+
+enum ActionPriority {
+  ACTION_PRIORITY_UNSPECIFIED = 0;
+  LOW = 1;
+  MEDIUM = 2;
+  HIGH = 3;
+  IMMEDIATE = 4;
+}
+
+enum ComplianceStandard {
+  COMPLIANCE_STANDARD_UNSPECIFIED = 0;
+  OWASP_TOP_10 = 1;
+  CWE = 2;
+  SANS_TOP_25 = 3;
+  ISO_27001 = 4;
+}
