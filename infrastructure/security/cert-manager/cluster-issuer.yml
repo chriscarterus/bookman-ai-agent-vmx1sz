@@ -1,0 +1,67 @@
+# cert-manager ClusterIssuer configuration for Bookman AI platform
+# Version: cert-manager.io/v1
+# Purpose: Automated TLS certificate management using Let's Encrypt
+
+---
+# Staging ClusterIssuer for testing certificate issuance
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+  namespace: cert-manager
+  labels:
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/component: cluster-issuer
+    environment: staging
+spec:
+  acme:
+    # Let's Encrypt staging server for testing
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: admin@bookman.ai
+    privateKeySecretRef:
+      name: letsencrypt-staging-key
+    solvers:
+      - http01:
+          ingress:
+            class: kong
+            podTemplate:
+              spec:
+                # Ensure solver pods run on Linux nodes
+                nodeSelector:
+                  kubernetes.io/os: linux
+                # Allow running on tainted nodes if needed
+                tolerations:
+                  - key: CriticalAddonsOnly
+                    operator: Exists
+
+---
+# Production ClusterIssuer for live certificates
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+  namespace: cert-manager
+  labels:
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/component: cluster-issuer
+    environment: production
+spec:
+  acme:
+    # Let's Encrypt production server for valid certificates
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@bookman.ai
+    privateKeySecretRef:
+      name: letsencrypt-prod-key
+    solvers:
+      - http01:
+          ingress:
+            class: kong
+            podTemplate:
+              spec:
+                # Ensure solver pods run on Linux nodes
+                nodeSelector:
+                  kubernetes.io/os: linux
+                # Allow running on tainted nodes if needed
+                tolerations:
+                  - key: CriticalAddonsOnly
+                    operator: Exists
