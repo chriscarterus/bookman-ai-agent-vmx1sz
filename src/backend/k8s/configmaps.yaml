@@ -1,0 +1,195 @@
+# Kubernetes ConfigMaps for Bookman AI Platform Services
+# Version: 1.0.0
+# API Version: v1
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-service-config
+  labels:
+    app: bookman-ai
+    environment: ${ENVIRONMENT}
+    version: 1.0.0
+    managed-by: kubernetes
+  annotations:
+    configmap.version: 1.0.0
+    configmap.update-time: auto-generated
+    configmap.description: Authentication service configuration
+    configmap.last-validated: auto-generated
+data:
+  PORT: "3001"
+  HOST: "0.0.0.0"
+  CORS_ORIGIN: "*"
+  NODE_ENV: ${ENVIRONMENT}
+  LOG_LEVEL: "info"
+  PASSWORD_MIN_LENGTH: "12"
+  PASSWORD_REQUIRE_SPECIAL: "true"
+  PASSWORD_REQUIRE_NUMBER: "true"
+  PASSWORD_REQUIRE_UPPERCASE: "true"
+  MAX_LOGIN_ATTEMPTS: "5"
+  LOCKOUT_DURATION: "30m"
+  BCRYPT_ROUNDS: "12"
+  RATE_LIMIT_WINDOW: "15m"
+  RATE_LIMIT_MAX_REQUESTS: "100"
+  SESSION_TIMEOUT: "24h"
+  TOKEN_EXPIRY: "1h"
+  REFRESH_TOKEN_EXPIRY: "7d"
+  MFA_ENABLED: "true"
+  MFA_ISSUER: "BookmanAI"
+  AUDIT_LOG_ENABLED: "true"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: market-analysis-config
+  labels:
+    app: bookman-ai
+    environment: ${ENVIRONMENT}
+    version: 1.0.0
+    managed-by: kubernetes
+  annotations:
+    configmap.version: 1.0.0
+    configmap.update-time: auto-generated
+    configmap.description: Market analysis service configuration
+    configmap.last-validated: auto-generated
+data:
+  TIMESCALE_HOST: "market-db"
+  TIMESCALE_PORT: "5432"
+  TIMESCALE_DB: "market_data"
+  TIMESCALE_SCHEMA: "public"
+  API_RATE_LIMIT: "1000"
+  API_TIMEOUT_SECONDS: "30"
+  PREDICTION_INTERVAL: "3600"
+  CONFIDENCE_THRESHOLD: "0.85"
+  BATCH_SIZE: "128"
+  LOG_LEVEL: "info"
+  SERVICE_NAME: "market-analysis"
+  ENV_STATE: ${ENVIRONMENT}
+  MODEL_VERSION: "1.0.0"
+  DATA_RETENTION_DAYS: "90"
+  FEATURE_SCALING: "true"
+  ANOMALY_DETECTION_ENABLED: "true"
+  MARKET_UPDATE_INTERVAL: "5m"
+  MAX_HISTORICAL_DAYS: "365"
+  CACHE_STRATEGY: "LRU"
+  CACHE_SIZE_MB: "1024"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: education-service-config
+  labels:
+    app: bookman-ai
+    environment: ${ENVIRONMENT}
+    version: 1.0.0
+    managed-by: kubernetes
+  annotations:
+    configmap.version: 1.0.0
+    configmap.update-time: auto-generated
+    configmap.description: Education service configuration
+    configmap.last-validated: auto-generated
+data:
+  APP_PORT: "3003"
+  LOG_LEVEL: "info"
+  COURSE_CACHE_TTL: "3600"
+  MAX_CONCURRENT_USERS: "1000"
+  AI_MODEL_PATH: "/models/education"
+  CONTENT_STORAGE_PATH: "/data/courses"
+  VIDEO_CACHE_SIZE: "5GB"
+  MAX_VIDEO_DURATION: "7200"
+  SUPPORTED_FORMATS: "mp4,webm"
+  TRANSCODING_ENABLED: "true"
+  SUBTITLE_LANGUAGES: "en,es,fr,de,zh"
+  PROGRESS_TRACKING_INTERVAL: "5m"
+  QUIZ_TIME_LIMIT: "1800"
+  CERTIFICATE_TEMPLATE_PATH: "/templates/certificates"
+  CONTENT_BACKUP_ENABLED: "true"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: portfolio-service-config
+  labels:
+    app: bookman-ai
+    environment: ${ENVIRONMENT}
+    version: 1.0.0
+    managed-by: kubernetes
+  annotations:
+    configmap.version: 1.0.0
+    configmap.update-time: auto-generated
+    configmap.description: Portfolio service configuration
+    configmap.last-validated: auto-generated
+data:
+  APP_PORT: "3004"
+  LOG_LEVEL: "info"
+  CACHE_TTL: "300"
+  MAX_ASSETS: "100"
+  UPDATE_INTERVAL: "60"
+  PERFORMANCE_WINDOW: "365d"
+  PRICE_UPDATE_INTERVAL: "1m"
+  HISTORICAL_DATA_RANGE: "5y"
+  ALERT_THRESHOLD_PERCENT: "5"
+  ROI_CALCULATION_METHOD: "FIFO"
+  TAX_CALCULATION_ENABLED: "true"
+  PORTFOLIO_BACKUP_INTERVAL: "24h"
+  TRANSACTION_HISTORY_LIMIT: "10000"
+  EXPORT_FORMATS: "csv,pdf,json"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: security-service-config
+  labels:
+    app: bookman-ai
+    environment: ${ENVIRONMENT}
+    version: 1.0.0
+    managed-by: kubernetes
+  annotations:
+    configmap.version: 1.0.0
+    configmap.update-time: auto-generated
+    configmap.description: Security service configuration
+    configmap.last-validated: auto-generated
+data:
+  APP_PORT: "3005"
+  LOG_LEVEL: "info"
+  SCAN_INTERVAL: "300"
+  ALERT_THRESHOLD: "0.8"
+  MAX_CONTRACT_SIZE: "1MB"
+  AUDIT_CACHE_TTL: "3600"
+  VULNERABILITY_DB_UPDATE: "24h"
+  THREAT_INTELLIGENCE_ENABLED: "true"
+  SIGNATURE_UPDATE_INTERVAL: "6h"
+  MAX_SCAN_DURATION: "300"
+  QUARANTINE_ENABLED: "true"
+  QUARANTINE_DURATION: "72h"
+  REPORT_RETENTION_DAYS: "90"
+  BLOCKCHAIN_MONITORING_ENABLED: "true"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: community-service-config
+  labels:
+    app: bookman-ai
+    environment: ${ENVIRONMENT}
+    version: 1.0.0
+    managed-by: kubernetes
+  annotations:
+    configmap.version: 1.0.0
+    configmap.update-time: auto-generated
+    configmap.description: Community service configuration
+    configmap.last-validated: auto-generated
+data:
+  APP_PORT: "3006"
+  LOG_LEVEL: "info"
+  POST_CACHE_TTL: "600"
+  MAX_POST_LENGTH: "10000"
+  MAX_COMMENTS: "1000"
+  NOTIFICATION_BATCH_SIZE: "50"
+  CONTENT_MODERATION_ENABLED: "true"
+  PROFANITY_FILTER_ENABLED: "true"
+  USER_REPUTATION_ENABLED: "true"
+  TRENDING_CALCULATION_INTERVAL: "15m"
+  FEED_CACHE_TTL: "300"
+  SEARCH_INDEX_UPDATE_INTERVAL: "5m"
+  MAX_ATTACHMENTS_PER_POST: "5"
+  SUPPORTED_ATTACHMENT_TYPES: "image,pdf,txt"
