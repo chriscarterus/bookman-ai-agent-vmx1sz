@@ -1,0 +1,322 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Bookman AI Portfolio Schemas",
+  "description": "JSON Schema definitions for cryptocurrency portfolio management",
+  
+  "$defs": {
+    "basePortfolioFields": {
+      "type": "object",
+      "required": ["portfolio_id", "user_id", "created_at", "updated_at"],
+      "properties": {
+        "portfolio_id": {
+          "type": "string",
+          "description": "Unique portfolio identifier",
+          "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "Owner's user identifier",
+          "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$"
+        },
+        "created_at": {
+          "type": "string",
+          "description": "Portfolio creation timestamp",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "description": "Last update timestamp",
+          "format": "date-time"
+        }
+      }
+    }
+  },
+
+  "definitions": {
+    "PortfolioSchema": {
+      "type": "object",
+      "description": "Portfolio metadata and configuration",
+      "allOf": [
+        { "$ref": "#/$defs/basePortfolioFields" }
+      ],
+      "required": ["name", "risk_level"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Portfolio display name",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "description": {
+          "type": "string",
+          "description": "Portfolio description",
+          "maxLength": 500
+        },
+        "risk_level": {
+          "type": "string",
+          "description": "Portfolio risk assessment level",
+          "enum": ["conservative", "moderate", "aggressive"]
+        },
+        "is_default": {
+          "type": "boolean",
+          "description": "Whether this is the user's default portfolio",
+          "default": false
+        },
+        "tags": {
+          "type": "array",
+          "description": "Custom portfolio tags",
+          "items": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "maxItems": 10
+        }
+      }
+    },
+
+    "PortfolioAssetSchema": {
+      "type": "object",
+      "description": "Portfolio asset holding details",
+      "required": [
+        "asset_id",
+        "portfolio_id",
+        "symbol",
+        "type",
+        "quantity",
+        "average_buy_price",
+        "current_price",
+        "last_updated"
+      ],
+      "properties": {
+        "asset_id": {
+          "type": "string",
+          "description": "Unique asset identifier",
+          "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$"
+        },
+        "portfolio_id": {
+          "type": "string",
+          "description": "Reference to parent portfolio",
+          "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$"
+        },
+        "symbol": {
+          "$ref": "market.schema.json#/definitions/MarketDataSchema/properties/symbol"
+        },
+        "type": {
+          "type": "string",
+          "description": "Asset type classification",
+          "enum": ["cryptocurrency", "token", "nft", "defi_position", "staked_asset"]
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Asset holding quantity",
+          "minimum": 0,
+          "maximum": 1e20
+        },
+        "average_buy_price": {
+          "type": "number",
+          "description": "Average acquisition price in USD",
+          "minimum": 0
+        },
+        "current_price": {
+          "type": "number",
+          "description": "Current market price in USD",
+          "minimum": 0
+        },
+        "allocation_percentage": {
+          "type": "number",
+          "description": "Portfolio allocation percentage",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "last_updated": {
+          "type": "string",
+          "description": "Last price update timestamp",
+          "format": "date-time"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional asset-specific metadata",
+          "additionalProperties": true
+        }
+      }
+    },
+
+    "PortfolioTransactionSchema": {
+      "type": "object",
+      "description": "Portfolio transaction record",
+      "required": [
+        "transaction_id",
+        "portfolio_id",
+        "asset_id",
+        "type",
+        "quantity",
+        "price",
+        "timestamp"
+      ],
+      "properties": {
+        "transaction_id": {
+          "type": "string",
+          "description": "Unique transaction identifier",
+          "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$"
+        },
+        "portfolio_id": {
+          "type": "string",
+          "description": "Reference to parent portfolio",
+          "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$"
+        },
+        "asset_id": {
+          "type": "string",
+          "description": "Reference to traded asset",
+          "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$"
+        },
+        "type": {
+          "type": "string",
+          "description": "Transaction type",
+          "enum": ["buy", "sell", "transfer", "stake", "unstake", "swap", "yield_harvest", "fee"]
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Transaction quantity",
+          "minimum": 0
+        },
+        "price": {
+          "type": "number",
+          "description": "Transaction price in USD",
+          "minimum": 0
+        },
+        "fee": {
+          "type": "number",
+          "description": "Transaction fee in USD",
+          "minimum": 0,
+          "default": 0
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Transaction timestamp",
+          "format": "date-time"
+        },
+        "blockchain_tx_hash": {
+          "type": "string",
+          "description": "Blockchain transaction hash",
+          "pattern": "^0x[a-fA-F0-9]{64}$",
+          "nullable": true
+        },
+        "notes": {
+          "type": "string",
+          "description": "Transaction notes",
+          "maxLength": 500
+        }
+      }
+    },
+
+    "PortfolioPerformanceSchema": {
+      "type": "object",
+      "description": "Portfolio performance metrics",
+      "required": [
+        "portfolio_id",
+        "total_value",
+        "total_cost",
+        "total_profit_loss",
+        "profit_loss_percentage",
+        "timestamp"
+      ],
+      "properties": {
+        "portfolio_id": {
+          "type": "string",
+          "description": "Reference to portfolio",
+          "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$"
+        },
+        "total_value": {
+          "type": "number",
+          "description": "Current portfolio value in USD",
+          "minimum": 0
+        },
+        "total_cost": {
+          "type": "number",
+          "description": "Total investment cost in USD",
+          "minimum": 0
+        },
+        "total_profit_loss": {
+          "type": "number",
+          "description": "Absolute profit/loss in USD"
+        },
+        "profit_loss_percentage": {
+          "type": "number",
+          "description": "Relative profit/loss percentage"
+        },
+        "daily_profit_loss": {
+          "type": "number",
+          "description": "24-hour profit/loss in USD"
+        },
+        "weekly_profit_loss": {
+          "type": "number",
+          "description": "7-day profit/loss in USD"
+        },
+        "monthly_profit_loss": {
+          "type": "number",
+          "description": "30-day profit/loss in USD"
+        },
+        "risk_metrics": {
+          "type": "object",
+          "description": "Portfolio risk assessment metrics",
+          "required": ["volatility", "sharpe_ratio", "max_drawdown"],
+          "properties": {
+            "volatility": {
+              "type": "number",
+              "description": "Portfolio volatility percentage",
+              "minimum": 0
+            },
+            "sharpe_ratio": {
+              "type": "number",
+              "description": "Risk-adjusted return metric"
+            },
+            "max_drawdown": {
+              "type": "number",
+              "description": "Maximum historical drawdown percentage",
+              "minimum": 0,
+              "maximum": 100
+            }
+          }
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Performance calculation timestamp",
+          "format": "date-time"
+        }
+      }
+    }
+  },
+
+  "type": "object",
+  "properties": {
+    "SUPPORTED_ASSET_TYPES": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["cryptocurrency", "token", "nft", "defi_position", "staked_asset"]
+      }
+    },
+    "SUPPORTED_TRANSACTION_TYPES": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["buy", "sell", "transfer", "stake", "unstake", "swap", "yield_harvest", "fee"]
+      }
+    },
+    "MAX_ASSETS_PER_PORTFOLIO": {
+      "type": "number",
+      "const": 1000
+    },
+    "MAX_TRANSACTIONS_PER_REQUEST": {
+      "type": "number",
+      "const": 100
+    },
+    "PERFORMANCE_CALCULATION_INTERVALS": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["1h", "24h", "7d", "30d", "90d", "1y", "all"]
+      }
+    }
+  }
+}
