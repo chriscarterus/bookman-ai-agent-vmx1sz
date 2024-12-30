@@ -1,0 +1,102 @@
+name: Frontend CI
+
+# Trigger workflow on push and pull requests to main and develop branches
+# Only when changes are made to frontend code
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - src/web/**
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - src/web/**
+
+# Environment variables used across jobs
+env:
+  NODE_VERSION: '18.x'
+  NPM_VERSION: '9.x'
+  WORKING_DIRECTORY: src/web
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # Checkout repository with full git history for better change detection
+      - name: Checkout
+        uses: actions/checkout@v3 # v3.5.3
+        with:
+          fetch-depth: 0
+
+      # Setup Node.js environment with caching
+      - name: Setup Node.js
+        uses: actions/setup-node@v3 # v3.7.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: src/web/package-lock.json
+
+      # Install dependencies using clean install for reproducible builds
+      - name: Install Dependencies
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npm ci
+
+      # Run TypeScript type checking
+      - name: Type Check
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npm run typecheck
+
+      # Run ESLint for code quality checks
+      - name: Lint
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npm run lint
+
+      # Run tests with coverage reporting
+      - name: Test
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npm run test:coverage
+        env:
+          CI: true
+
+      # Build production bundle
+      - name: Build
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npm run build
+        env:
+          CI: true
+          NODE_ENV: production
+
+      # Cache build artifacts for potential deployment
+      - name: Cache Build
+        uses: actions/cache@v3 # v3.3.1
+        with:
+          path: ${{ env.WORKING_DIRECTORY }}/build
+          key: ${{ runner.os }}-build-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-build-
+
+      # Upload test coverage as artifact
+      - name: Upload Coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage
+          path: ${{ env.WORKING_DIRECTORY }}/coverage
+          retention-days: 14
+
+      # Report job status
+      - name: Report Status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ Frontend CI pipeline completed successfully"
+          else
+            echo "❌ Frontend CI pipeline failed"
+            exit 1
+          fi
