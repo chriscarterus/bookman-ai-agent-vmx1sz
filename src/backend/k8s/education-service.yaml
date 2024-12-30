@@ -1,0 +1,207 @@
+# Education Service Kubernetes Configuration
+# Version: 1.0.0
+# Description: Deployment configuration for AI-driven education service
+# Dependencies: education-service-config ConfigMap, education-service-secrets Secret
+apiVersion: v1
+kind: List
+items:
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: education-service
+    namespace: bookman-ai
+    labels:
+      app: education-service
+      component: backend
+      environment: ${ENVIRONMENT}
+    annotations:
+      deployment.kubernetes.io/revision: "1"
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "8000"
+  spec:
+    replicas: 3
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 0
+    selector:
+      matchLabels:
+        app: education-service
+    template:
+      metadata:
+        labels:
+          app: education-service
+        annotations:
+          prometheus.io/scrape: "true"
+          prometheus.io/port: "8000"
+      spec:
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          fsGroup: 2000
+        containers:
+        - name: education-service
+          image: bookman-ai/education-service:latest
+          imagePullPolicy: Always
+          ports:
+          - name: http
+            containerPort: 8000
+            protocol: TCP
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+              nvidia.com/gpu: "1"
+          env:
+          - name: APP_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: education-service-config
+                key: APP_PORT
+          - name: LOG_LEVEL
+            valueFrom:
+              configMapKeyRef:
+                name: education-service-config
+                key: LOG_LEVEL
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: education-service-secrets
+                key: DB_PASSWORD
+          - name: AI_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: education-service-secrets
+                key: AI_API_KEY
+          - name: CONTENT_ENCRYPTION_KEY
+            valueFrom:
+              secretKeyRef:
+                name: education-service-secrets
+                key: CONTENT_ENCRYPTION_KEY
+          volumeMounts:
+          - name: ml-models
+            mountPath: /app/models
+            readOnly: true
+          - name: course-content
+            mountPath: /data/courses
+            readOnly: true
+          - name: tmp-data
+            mountPath: /tmp
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 2
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 30
+        volumes:
+        - name: ml-models
+          persistentVolumeClaim:
+            claimName: education-ml-models-pvc
+        - name: course-content
+          persistentVolumeClaim:
+            claimName: education-content-pvc
+        - name: tmp-data
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi
+        nodeSelector:
+          gpu: "true"
+          kubernetes.io/os: linux
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                    - education-service
+                topologyKey: kubernetes.io/hostname
+        tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: education-service
+    namespace: bookman-ai
+    labels:
+      app: education-service
+      component: backend
+  spec:
+    type: ClusterIP
+    ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+    selector:
+      app: education-service
+
+- apiVersion: autoscaling/v2
+  kind: HorizontalPodAutoscaler
+  metadata:
+    name: education-service-hpa
+    namespace: bookman-ai
+    labels:
+      app: education-service
+      component: backend
+  spec:
+    scaleTargetRef:
+      apiVersion: apps/v1
+      kind: Deployment
+      name: education-service
+    minReplicas: 3
+    maxReplicas: 10
+    metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+    behavior:
+      scaleUp:
+        stabilizationWindowSeconds: 60
+        policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+      scaleDown:
+        stabilizationWindowSeconds: 300
+        policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
