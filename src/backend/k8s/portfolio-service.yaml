@@ -1,0 +1,163 @@
+# Portfolio Service Kubernetes Deployment and Service Configuration
+# Version: 1.0.0
+# Dependencies:
+# - configmaps.yaml: portfolio-service-config (APP_PORT, LOG_LEVEL)
+# - secrets.yaml: database-credentials (DB_USERNAME, DB_PASSWORD)
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portfolio-service
+  labels:
+    app: portfolio-service
+    component: backend
+    tier: service
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3004"
+    prometheus.io/path: "/metrics"
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: portfolio-service
+  template:
+    metadata:
+      labels:
+        app: portfolio-service
+        component: backend
+        tier: service
+    spec:
+      securityContext:
+        fsGroup: 1000
+        runAsNonRoot: true
+      serviceAccountName: portfolio-service-sa
+      containers:
+      - name: portfolio-service
+        image: bookmanai/portfolio-service:latest
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 3004
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+          requests:
+            cpu: "750m"
+            memory: "2Gi"
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop:
+              - ALL
+        env:
+          - name: APP_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: portfolio-service-config
+                key: APP_PORT
+          - name: LOG_LEVEL
+            valueFrom:
+              configMapKeyRef:
+                name: portfolio-service-config
+                key: LOG_LEVEL
+          - name: DB_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: database-credentials
+                key: DB_USERNAME
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: database-credentials
+                key: DB_PASSWORD
+        startupProbe:
+          httpGet:
+            path: /startup
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          failureThreshold: 30
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 45
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+          - name: tmp
+            mountPath: /tmp
+          - name: config
+            mountPath: /app/config
+            readOnly: true
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: portfolio-service-config
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - portfolio-service
+              topologyKey: kubernetes.io/hostname
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app: portfolio-service
+      terminationGracePeriodSeconds: 60
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: portfolio-service
+  labels:
+    app: portfolio-service
+    component: backend
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3004
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: portfolio-service
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
