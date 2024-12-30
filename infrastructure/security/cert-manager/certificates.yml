@@ -1,0 +1,106 @@
+# Kubernetes manifest for TLS certificate management in Bookman AI platform
+# Version: cert-manager.io/v1
+# Purpose: Define Certificate resources for automated TLS certificate provisioning and management
+
+---
+# Wildcard certificate for external domain access
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: bookman-wildcard-cert
+  namespace: default
+  labels:
+    app.kubernetes.io/name: bookman
+    app.kubernetes.io/component: certificates
+    security.bookman.ai/certificate-type: external
+spec:
+  # Secret to store the certificate
+  secretName: bookman-tls
+  # 90-day duration with 15-day renewal window
+  duration: 2160h
+  renewBefore: 360h
+  # Organization details for certificate subject
+  subject:
+    organizations:
+      - "Bookman AI"
+    organizationalUnits:
+      - "Platform Security"
+    countries:
+      - "US"
+    localities:
+      - "San Francisco"
+  # Domain coverage
+  dnsNames:
+    - "bookman.ai"
+    - "*.bookman.ai"
+    - "api.bookman.ai"
+    - "admin.bookman.ai"
+    - "learn.bookman.ai"
+  # Certificate issuer configuration
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+    group: cert-manager.io
+  # Certificate usage specifications
+  usages:
+    - digital signature
+    - key encipherment
+    - server auth
+    - client auth
+  # Private key configuration
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 4096
+    rotationPolicy: Always
+
+---
+# Service mesh certificate for internal mTLS
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: service-mesh-cert
+  namespace: default
+  labels:
+    app.kubernetes.io/name: bookman
+    app.kubernetes.io/component: certificates
+    security.bookman.ai/certificate-type: internal
+spec:
+  # Secret to store the certificate
+  secretName: service-mesh-tls
+  # 90-day duration with 15-day renewal window
+  duration: 2160h
+  renewBefore: 360h
+  # Organization details for certificate subject
+  subject:
+    organizations:
+      - "Bookman AI"
+    organizationalUnits:
+      - "Service Mesh"
+    countries:
+      - "US"
+    localities:
+      - "San Francisco"
+  # Internal domain coverage for service mesh
+  dnsNames:
+    - "*.default.svc.cluster.local"
+    - "*.bookman-system.svc.cluster.local"
+    - "*.monitoring.svc.cluster.local"
+    - "*.security.svc.cluster.local"
+  # Certificate issuer configuration
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+    group: cert-manager.io
+  # Certificate usage specifications
+  usages:
+    - digital signature
+    - key encipherment
+    - server auth
+    - client auth
+  # Private key configuration
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 4096
+    rotationPolicy: Always
