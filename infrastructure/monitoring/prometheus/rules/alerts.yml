@@ -1,0 +1,155 @@
+# Prometheus Alerting Rules Configuration v2.40.0
+# Defines critical alerts and notifications for the Bookman AI platform
+
+groups:
+  # Service Availability Monitoring
+  - name: service_availability
+    rules:
+      # Critical service outage detection
+      - alert: ServiceDown
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: critical
+          category: availability
+          team: sre
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "Service {{ $labels.job }} has been down for more than 5 minutes"
+          runbook_url: "https://wiki.bookman.ai/runbooks/service-outage"
+
+      # High error rate detection
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          category: errors
+          team: sre
+        annotations:
+          summary: "High error rate for {{ $labels.service }}"
+          description: "Service {{ $labels.service }} has error rate > 5% for 10m"
+          dashboard: "https://grafana.bookman.ai/d/service-errors"
+
+  # Service Performance Monitoring
+  - name: service_performance
+    rules:
+      # Latency threshold violations
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service)) > 2
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+          team: platform
+        annotations:
+          summary: "High latency for {{ $labels.service }}"
+          description: "P95 latency > 2s for {{ $labels.service }} over 5m"
+          dashboard: "https://grafana.bookman.ai/d/latency"
+
+      # API endpoint saturation
+      - alert: APIEndpointSaturation
+        expr: rate(http_requests_total[5m]) > 1000
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+          team: platform
+        annotations:
+          summary: "High request rate for {{ $labels.endpoint }}"
+          description: "Endpoint receiving > 1000 req/s for 5m"
+
+  # Resource Utilization Monitoring
+  - name: resource_utilization
+    rules:
+      # Memory usage alerts
+      - alert: HighMemoryUsage
+        expr: container_memory_usage_bytes / container_spec_memory_limit_bytes > 0.85
+        for: 15m
+        labels:
+          severity: warning
+          category: resources
+          team: platform
+        annotations:
+          summary: "High memory usage for {{ $labels.service }}"
+          description: "Memory usage > 85% for 15m"
+          dashboard: "https://grafana.bookman.ai/d/resources"
+
+      # CPU usage alerts
+      - alert: HighCPUUsage
+        expr: sum(rate(container_cpu_usage_seconds_total[5m])) by (pod) / sum(container_spec_cpu_quota) by (pod) > 0.8
+        for: 15m
+        labels:
+          severity: warning
+          category: resources
+          team: platform
+        annotations:
+          summary: "High CPU usage for {{ $labels.pod }}"
+          description: "CPU usage > 80% for 15m"
+
+      # Disk space alerts
+      - alert: DiskSpaceRunningOut
+        expr: container_fs_usage_bytes / container_fs_limit_bytes > 0.85
+        for: 15m
+        labels:
+          severity: warning
+          category: resources
+          team: platform
+        annotations:
+          summary: "Low disk space for {{ $labels.pod }}"
+          description: "Disk usage > 85% for 15m"
+
+  # Security Monitoring
+  - name: security_alerts
+    rules:
+      # Failed login attempts
+      - alert: HighFailedLogins
+        expr: sum(rate(failed_login_attempts_total[5m])) by (service) > 10
+        for: 5m
+        labels:
+          severity: critical
+          category: security
+          team: security
+        annotations:
+          summary: "High failed logins for {{ $labels.service }}"
+          description: "> 10 failed logins/min for 5m"
+          runbook_url: "https://wiki.bookman.ai/runbooks/security-incidents"
+
+      # Suspicious API patterns
+      - alert: SuspiciousAPIActivity
+        expr: rate(suspicious_api_calls_total[5m]) > 5
+        for: 5m
+        labels:
+          severity: critical
+          category: security
+          team: security
+        annotations:
+          summary: "Suspicious API activity detected"
+          description: "Multiple suspicious API calls detected"
+
+  # Business Metrics Monitoring
+  - name: business_metrics
+    rules:
+      # User engagement drops
+      - alert: LowUserEngagement
+        expr: rate(user_activity_total[1h]) < 100
+        for: 30m
+        labels:
+          severity: warning
+          category: business
+          team: product
+        annotations:
+          summary: "Low user engagement detected"
+          description: "User activity below threshold for 30m"
+
+      # Transaction processing issues
+      - alert: HighTransactionFailureRate
+        expr: rate(transaction_failures_total[5m]) / rate(transactions_total[5m]) > 0.01
+        for: 10m
+        labels:
+          severity: critical
+          category: business
+          team: product
+        annotations:
+          summary: "High transaction failure rate"
+          description: "Transaction failures > 1% for 10m"
