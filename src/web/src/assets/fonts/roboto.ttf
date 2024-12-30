@@ -1,0 +1,18 @@
+Note: The actual Roboto.ttf file should be downloaded from Google Fonts or another authorized source and placed at this location. The font file is subject to the Apache License 2.0.
+
+Font Usage Instructions:
+1. Download Roboto.ttf from Google Fonts
+2. Place the file at src/web/src/assets/fonts/roboto.ttf
+3. Reference this font in CSS using @font-face declarations
+4. Implement with specified weights (400, 600, 700) and styles (normal)
+5. Follow performance optimization guidelines for font loading
+
+Key Specifications:
+- Font Family: Roboto
+- Format: TrueType (.ttf)
+- Weights: 400 (Regular), 600 (Semi-Bold), 700 (Bold)
+- Style: Normal
+- WCAG 2.1 Level AA compliant
+- Optimized for web with subsetting
+- Cache-Control: public, max-age=31536000
+- Compression: Gzip/Brotli supported
