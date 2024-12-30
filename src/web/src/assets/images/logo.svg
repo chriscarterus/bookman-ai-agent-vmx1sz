@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="240" height="48" viewBox="0 0 240 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bookman AI logo">
+  <title>Bookman AI</title>
+  <desc>Bookman AI platform logo</desc>
+  
+  <!-- Book shape -->
+  <path d="M24 8C19.5817 8 16 11.5817 16 16V32C16 36.4183 19.5817 40 24 40H40V8H24Z" 
+        fill="#2563EB"/>
+  <path d="M40 8V40H56C60.4183 40 64 36.4183 64 32V16C64 11.5817 60.4183 8 56 8H40Z" 
+        fill="#10B981"/>
+  <path d="M40 8V40" stroke="#FFFFFF" stroke-width="2"/>
+  
+  <!-- AI circuit pattern -->
+  <path d="M28 16H32M28 24H32M28 32H32" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+  <path d="M48 16H52M48 24H52M48 32H52" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Text "BOOKMAN" -->
+  <path d="M80 16V32H84C88.4183 32 92 28.4183 92 24C92 19.5817 88.4183 16 84 16H80Z" 
+        fill="#2563EB"/>
+  <path d="M100 16H96V32H100V16Z" fill="#2563EB"/>
+  <path d="M108 16H104V32H108V16Z" fill="#2563EB"/>
+  <path d="M120 16H116V32H120V16Z" fill="#2563EB"/>
+  <path d="M132 16H128L124 32H128L132 16Z" fill="#2563EB"/>
+  <path d="M144 16H140V32H144V16Z" fill="#2563EB"/>
+  <path d="M156 16H152L148 32H152L156 16Z" fill="#2563EB"/>
+  
+  <!-- Text "AI" -->
+  <path d="M180 16H176L172 32H176L180 16Z" fill="#10B981"/>
+  <path d="M188 16H184V32H188V16Z" fill="#10B981"/>
+</svg>
