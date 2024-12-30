@@ -1,0 +1,201 @@
+# Security Service Kubernetes Configuration
+# Version: 1.0.0
+# Purpose: Deployment configuration for the Rust-based security service
+# with enhanced security measures and high availability
+
+# API versions for required resources
+apiVersion: v1
+kind: Service
+metadata:
+  name: security-service
+  labels:
+    app: security-service
+    component: security
+    version: 1.0.0
+  annotations:
+    service.istio.io/canonical-name: security-service
+    service.istio.io/canonical-revision: v1
+spec:
+  ports:
+    - port: 3005
+      targetPort: 3005
+      protocol: TCP
+      name: grpc
+    - port: 9090
+      targetPort: 9090
+      protocol: TCP
+      name: health
+  selector:
+    app: security-service
+  type: ClusterIP
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: security-service-pdb
+  labels:
+    app: security-service
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: security-service
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: security-service-network-policy
+  labels:
+    app: security-service
+spec:
+  podSelector:
+    matchLabels:
+      app: security-service
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+      ports:
+        - port: 3005
+          protocol: TCP
+        - port: 9090
+          protocol: TCP
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: security-db
+      ports:
+        - port: 5432
+          protocol: TCP
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: blockchain-apis
+      ports:
+        - port: 443
+          protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: security-service
+  labels:
+    app: security-service
+    version: 1.0.0
+  annotations:
+    security.istio.io/tlsMode: strict
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9090"
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: security-service
+  template:
+    metadata:
+      labels:
+        app: security-service
+        version: 1.0.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        sidecar.istio.io/inject: "true"
+        security.istio.io/tlsMode: "strict"
+    spec:
+      securityContext:
+        fsGroup: 1000
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: security-service
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - security-service
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: security-service
+          image: security-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3005
+              name: grpc
+            - containerPort: 9090
+              name: health
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9090
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 9090
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 2
+          startupProbe:
+            httpGet:
+              path: /startup
+              port: 9090
+            failureThreshold: 30
+            periodSeconds: 10
+          envFrom:
+            - configMapRef:
+                name: security-service-config
+            - secretRef:
+                name: security-service-secrets
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: security-data
+              mountPath: /data
+              readOnly: true
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: security-data
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi
+      serviceAccountName: security-service
