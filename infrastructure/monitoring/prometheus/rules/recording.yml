@@ -1,0 +1,121 @@
+# Prometheus Recording Rules Configuration v2.40.0
+# Defines pre-computed metrics and aggregations for the Bookman AI platform
+
+# Global settings
+global:
+  evaluation_interval: 1m
+
+# Service Performance Metrics
+groups:
+  - name: service_performance
+    interval: 1m
+    rules:
+      # Request Rate by Service and Endpoint
+      - record: bookman:request_rate
+        expr: sum(rate(http_requests_total[5m])) by (service, endpoint)
+        labels:
+          metric_type: performance
+          aggregation: rate
+
+      # Error Rate by Service
+      - record: bookman:error_rate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m])) by (service) 
+          / 
+          sum(rate(http_requests_total[5m])) by (service)
+        labels:
+          metric_type: performance
+          aggregation: ratio
+
+      # 95th Percentile Latency
+      - record: bookman:latency_p95
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service))
+        labels:
+          metric_type: performance
+          aggregation: quantile
+
+      # 99th Percentile Latency
+      - record: bookman:latency_p99
+        expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service))
+        labels:
+          metric_type: performance
+          aggregation: quantile
+
+  # Resource Utilization Metrics
+  - name: resource_utilization
+    interval: 2m
+    rules:
+      # Memory Usage Percentage
+      - record: bookman:memory_usage_percent
+        expr: |
+          sum(container_memory_usage_bytes) by (service, pod) 
+          / 
+          sum(container_spec_memory_limit_bytes) by (service, pod) 
+          * 100
+        labels:
+          metric_type: resource
+          resource: memory
+
+      # CPU Usage Percentage
+      - record: bookman:cpu_usage_percent
+        expr: |
+          sum(rate(container_cpu_usage_seconds_total[5m])) by (service, pod) 
+          / 
+          sum(container_spec_cpu_quota) by (service, pod) 
+          * 100
+        labels:
+          metric_type: resource
+          resource: cpu
+
+      # Disk Usage Percentage
+      - record: bookman:disk_usage_percent
+        expr: |
+          sum(container_fs_usage_bytes) by (service, pod) 
+          / 
+          sum(container_fs_limit_bytes) by (service, pod) 
+          * 100
+        labels:
+          metric_type: resource
+          resource: disk
+
+      # Network Throughput
+      - record: bookman:network_throughput
+        expr: |
+          sum(rate(container_network_transmit_bytes_total[5m])) by (service, pod) 
+          + 
+          sum(rate(container_network_receive_bytes_total[5m])) by (service, pod)
+        labels:
+          metric_type: resource
+          resource: network
+
+  # Service Availability Metrics
+  - name: service_availability
+    interval: 1m
+    rules:
+      # 24-hour Service Uptime
+      - record: bookman:service_uptime_24h
+        expr: avg_over_time(up[24h]) * 100
+        labels:
+          metric_type: availability
+          window: 24h
+
+      # 7-day Service Uptime
+      - record: bookman:service_uptime_7d
+        expr: avg_over_time(up[7d]) * 100
+        labels:
+          metric_type: availability
+          window: 7d
+
+      # Service Health Score
+      - record: bookman:service_health_score
+        expr: |
+          sum(up) by (service) 
+          * 
+          (1 - (
+            sum(rate(http_requests_total{status=~"5.."}[5m])) by (service) 
+            / 
+            sum(rate(http_requests_total[5m])) by (service)
+          ))
+        labels:
+          metric_type: availability
+          aggregation: score
