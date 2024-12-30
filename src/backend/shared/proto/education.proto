@@ -1,0 +1,265 @@
+syntax = "proto3";
+
+package education;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/bookman/education";
+
+// Difficulty levels for courses
+enum DifficultyLevel {
+  DIFFICULTY_UNSPECIFIED = 0;
+  BEGINNER = 1;
+  INTERMEDIATE = 2;
+  ADVANCED = 3;
+  EXPERT = 4;
+}
+
+// Content types supported in modules
+enum ContentType {
+  CONTENT_TYPE_UNSPECIFIED = 0;
+  VIDEO = 1;
+  TEXT = 2;
+  QUIZ = 3;
+  INTERACTIVE = 4;
+  ASSESSMENT = 5;
+  SIMULATION = 6;
+  AI_GENERATED = 7;
+}
+
+// Module represents a learning unit within a course
+message Module {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  ContentType content_type = 4;
+  int32 order = 5;
+  bool is_required = 6;
+  repeated string prerequisites = 7;
+  oneof content {
+    VideoContent video_content = 8;
+    InteractiveContent interactive_content = 9;
+    AssessmentContent assessment_content = 10;
+    AIGeneratedContent ai_content = 11;
+  }
+  map<string, string> metadata = 12;
+}
+
+// Video-based learning content
+message VideoContent {
+  string url = 1;
+  string transcript = 2;
+  repeated Caption captions = 3;
+  int32 duration_minutes = 4;
+}
+
+message Caption {
+  string language = 1;
+  string url = 2;
+}
+
+// Interactive learning content
+message InteractiveContent {
+  string interaction_type = 1;
+  bytes content_data = 2;
+  CompletionCriteria completion_criteria = 3;
+  int32 duration_minutes = 4;
+}
+
+message CompletionCriteria {
+  string type = 1;
+  float threshold = 2;
+}
+
+// Assessment content for quizzes and tests
+message AssessmentContent {
+  repeated Question questions = 1;
+  float passing_score = 2;
+  int32 max_attempts = 3;
+  int32 time_limit_minutes = 4;
+}
+
+message Question {
+  string id = 1;
+  string type = 2;
+  string question_text = 3;
+  repeated string options = 4;
+  string correct_answer = 5;
+  int32 points = 6;
+  string explanation = 7;
+}
+
+// AI-generated content configuration
+message AIGeneratedContent {
+  string content_type = 1;
+  map<string, string> generation_params = 2;
+  string model_version = 3;
+  google.protobuf.Timestamp generated_at = 4;
+}
+
+// Learning path configuration
+message LearningPath {
+  string id = 1;
+  string name = 2;
+  repeated string course_ids = 3;
+  bool ai_recommended = 4;
+  bool adaptive_path = 5;
+  map<string, float> skill_requirements = 6;
+}
+
+// Course metadata
+message Metadata {
+  google.protobuf.Timestamp created_at = 1;
+  google.protobuf.Timestamp updated_at = 2;
+  string version = 3;
+  string author_id = 4;
+  bool is_published = 5;
+  map<string, string> custom_metadata = 6;
+}
+
+// Main course message
+message Course {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  DifficultyLevel difficulty = 4;
+  repeated Module modules = 5;
+  repeated string prerequisites = 6;
+  LearningPath learning_path = 7;
+  Metadata metadata = 8;
+  AIContentConfig ai_content_config = 9;
+  map<string, string> content_tags = 10;
+}
+
+// AI content generation configuration
+message AIContentConfig {
+  string model_id = 1;
+  map<string, string> parameters = 2;
+  repeated string content_types = 3;
+  bool auto_generate = 4;
+  int32 refresh_interval_hours = 5;
+}
+
+// Progress tracking metrics
+message ProgressMetrics {
+  float completion_percentage = 1;
+  int32 time_spent_minutes = 2;
+  int32 attempts = 3;
+  float average_score = 4;
+  google.protobuf.Timestamp last_activity = 5;
+}
+
+// Learning analytics
+message LearningAnalytics {
+  float engagement_score = 1;
+  map<string, float> skill_proficiency = 2;
+  repeated string strengths = 3;
+  repeated string areas_for_improvement = 4;
+  map<string, float> learning_velocity = 5;
+}
+
+// Progress milestone tracking
+message CompletionMilestone {
+  string id = 1;
+  string title = 2;
+  google.protobuf.Timestamp achieved_at = 3;
+  string achievement_type = 4;
+  map<string, string> metadata = 5;
+}
+
+// User progress tracking
+message Progress {
+  string id = 1;
+  string user_id = 2;
+  string course_id = 3;
+  map<string, ProgressMetrics> module_progress = 4;
+  map<string, float> quiz_scores = 5;
+  float overall_progress = 6;
+  bool completed = 7;
+  google.protobuf.Timestamp started_at = 8;
+  google.protobuf.Timestamp completed_at = 9;
+  google.protobuf.Timestamp last_activity = 10;
+  int32 engagement_score = 11;
+  repeated CompletionMilestone milestones = 12;
+  LearningAnalytics analytics = 13;
+}
+
+// Service requests and responses
+message GetCourseRequest {
+  string course_id = 1;
+}
+
+message ListCoursesRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+  DifficultyLevel difficulty = 3;
+  repeated string tags = 4;
+}
+
+message ListCoursesResponse {
+  repeated Course courses = 1;
+  string next_page_token = 2;
+  int32 total_courses = 3;
+}
+
+message CreateCourseRequest {
+  Course course = 1;
+}
+
+message UpdateCourseRequest {
+  string course_id = 1;
+  Course course = 2;
+}
+
+message GetProgressRequest {
+  string user_id = 1;
+  string course_id = 2;
+}
+
+message UpdateProgressRequest {
+  Progress progress = 1;
+}
+
+message RecordQuizScoreRequest {
+  string user_id = 1;
+  string course_id = 2;
+  string module_id = 3;
+  float score = 4;
+  map<string, string> metadata = 5;
+}
+
+message GenerateAIContentRequest {
+  string course_id = 1;
+  string module_id = 2;
+  AIContentConfig config = 3;
+}
+
+message GenerateAIContentResponse {
+  string content_id = 1;
+  AIGeneratedContent content = 2;
+  map<string, string> metadata = 3;
+}
+
+message GetLearningAnalyticsRequest {
+  string user_id = 1;
+  string course_id = 2;
+  google.protobuf.Timestamp start_date = 3;
+  google.protobuf.Timestamp end_date = 4;
+}
+
+// Education service definition
+service EducationService {
+  rpc GetCourse(GetCourseRequest) returns (Course);
+  rpc ListCourses(ListCoursesRequest) returns (ListCoursesResponse);
+  rpc CreateCourse(CreateCourseRequest) returns (Course);
+  rpc UpdateCourse(UpdateCourseRequest) returns (Course);
+  rpc DeleteCourse(GetCourseRequest) returns (google.protobuf.Empty);
+  
+  rpc GetProgress(GetProgressRequest) returns (Progress);
+  rpc UpdateProgress(UpdateProgressRequest) returns (Progress);
+  rpc RecordQuizScore(RecordQuizScoreRequest) returns (Progress);
+  
+  rpc GenerateAIContent(GenerateAIContentRequest) returns (GenerateAIContentResponse);
+  rpc GetLearningAnalytics(GetLearningAnalyticsRequest) returns (LearningAnalytics);
+}
