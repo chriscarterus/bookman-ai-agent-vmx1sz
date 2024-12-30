@@ -1,0 +1,96 @@
+# Dependencies and package management
+node_modules/
+**/node_modules/
+package-lock.json
+yarn.lock
+poetry.lock
+Pipfile.lock
+Cargo.lock
+
+# Build artifacts and compiled files
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+target/
+dist/
+build/
+*.egg-info/
+*.so
+*.dylib
+*.dll
+
+# Test and coverage
+tests/
+**/tests/
+coverage/
+.coverage
+htmlcov/
+.pytest_cache/
+junit.xml
+
+# Environment and configuration
+.env*
+.env.local
+.env.*.local
+config.local.js
+config.local.py
+*.local.toml
+
+# Version control
+.git/
+.gitignore
+.gitattributes
+.gitmodules
+
+# IDE and editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*.bak
+*.sublime-*
+.project
+.settings/
+.classpath
+
+# Documentation
+*.md
+*.rst
+*.txt
+docs/
+README*
+CHANGELOG*
+LICENSE*
+
+# Logs and debugging
+*.log
+logs/
+log/
+tmp/
+temp/
+debug/
+
+# Development tools and configuration
+.editorconfig
+.eslintrc*
+.prettierrc*
+.pylintrc
+.flake8
+mypy.ini
+.dockerignore
+Dockerfile*
+docker-compose*
+*.dockerfile
+
+# Cache and temporary files
+.cache/
+**/.cache/
+.tmp/
+.temp/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
