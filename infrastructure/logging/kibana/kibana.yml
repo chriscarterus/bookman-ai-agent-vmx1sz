@@ -1,0 +1,93 @@
+# Kibana v8.0+ Configuration
+# Enterprise-grade settings for Bookman AI Platform
+
+#===========================================
+# Server Configuration
+#===========================================
+server.name: "bookman-kibana"
+server.host: "0.0.0.0"
+server.port: 5601
+server.maxPayloadBytes: "50MB"
+server.basePath: "/kibana"
+server.rewriteBasePath: true
+server.compression.enabled: true
+server.compression.referrerWhitelist: ["bookman-ai.com"]
+
+#===========================================
+# Elasticsearch Connection
+#===========================================
+elasticsearch.hosts: 
+  - "http://elasticsearch-master:9200"
+  - "http://elasticsearch-data:9200"
+elasticsearch.preserveHost: true
+elasticsearch.requestTimeout: 60000
+elasticsearch.shardTimeout: 45000
+elasticsearch.startupTimeout: 15000
+elasticsearch.pingTimeout: 5000
+elasticsearch.ssl.verificationMode: "certificate"
+elasticsearch.ssl.certificateAuthorities: ["/etc/kibana/certs/ca.crt"]
+
+#===========================================
+# Security Settings
+#===========================================
+xpack.security.enabled: true
+xpack.security.encryptionKey: "${KIBANA_ENCRYPTION_KEY}"
+xpack.security.session.idleTimeout: "1h"
+xpack.security.session.lifespan: "24h"
+xpack.security.audit.enabled: true
+xpack.security.audit.ignore_filters.success: true
+xpack.reporting.encryptionKey: "${KIBANA_REPORTING_KEY}"
+xpack.encryptedSavedObjects.encryptionKey: "${KIBANA_ENCRYPTION_KEY}"
+xpack.security.authc.providers: ["basic", "saml"]
+xpack.security.authc.saml.realm: "saml1"
+
+#===========================================
+# Monitoring Configuration
+#===========================================
+monitoring.ui.container.elasticsearch.enabled: true
+monitoring.ui.container.logstash.enabled: true
+monitoring.ui.container.kibana.enabled: true
+xpack.monitoring.enabled: true
+xpack.monitoring.collection.enabled: true
+xpack.monitoring.collection.interval: "30s"
+xpack.monitoring.min_interval_seconds: 10
+xpack.monitoring.elasticsearch.collection.enabled: true
+xpack.monitoring.kibana.collection.enabled: true
+
+#===========================================
+# Logging Configuration
+#===========================================
+logging.dest: "stdout"
+logging.silent: false
+logging.quiet: false
+logging.verbose: false
+logging.json: true
+logging.timezone: "UTC"
+logging.events:
+  ops: ["error", "warning"]
+  request: ["error", "warning", "info"]
+  response: ["error", "warning", "info"]
+logging.rotate:
+  enabled: true
+  interval: "1d"
+  size: "100MB"
+
+#===========================================
+# Path Settings
+#===========================================
+path.data: "/usr/share/kibana/data"
+path.logs: "/usr/share/kibana/logs"
+
+#===========================================
+# UI Settings
+#===========================================
+i18n.locale: "en"
+server.defaultRoute: "/app/home"
+kibana.index: ".kibana"
+kibana.autocompleteTimeout: "2000"
+kibana.autocompleteTerminateAfter: 200000
+kibana.maxBucketSize: 100000
+visualization.colorMapping:
+  error: "#E74C3C"
+  warning: "#F39C12"
+  success: "#2ECC71"
