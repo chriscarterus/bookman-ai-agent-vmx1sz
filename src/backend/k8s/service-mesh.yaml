@@ -1,0 +1,179 @@
+# Istio Service Mesh Configuration v1beta1
+# Dependencies:
+# - istio: v1.18+
+# - kubernetes: v1.24+
+
+---
+# Global Mesh Configuration
+apiVersion: networking.istio.io/v1beta1
+kind: MeshConfig
+metadata:
+  name: global-mesh-config
+  namespace: bookman-system
+spec:
+  enableAutoMtls: true
+  enableTracing: true
+  defaultConfig:
+    tracing:
+      sampling: 100
+      zipkin:
+        address: jaeger-collector.monitoring:9411
+      customTags:
+        environment: production
+        service_version: ${SERVICE_VERSION}
+    proxyMetadata:
+      ISTIO_META_DNS_CAPTURE: "true"
+      ISTIO_META_DNS_AUTO_ALLOCATE: "true"
+      ISTIO_META_SECURITY_ENHANCED: "true"
+    accessLogging:
+      file:
+        path: /dev/stdout
+        format: JSON
+
+---
+# Default Destination Rules for all services
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: default-destination-rules
+  namespace: bookman-system
+spec:
+  host: "*.bookman-system.svc.cluster.local"
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+      minProtocolVersion: TLSV1_3
+      maxProtocolVersion: TLSV1_3
+      cipherSuites:
+        - ECDHE-ECDSA-AES256-GCM-SHA384
+        - ECDHE-RSA-AES256-GCM-SHA384
+    connectionPool:
+      tcp:
+        maxConnections: 100
+        connectTimeout: 5s
+        tcpKeepalive:
+          time: 7200s
+          interval: 75s
+          probes: 9
+      http:
+        http2MaxRequests: 1000
+        maxRequestsPerConnection: 100
+        maxRetries: 3
+        idleTimeout: 30s
+        h2UpgradePolicy: UPGRADE
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 50
+
+---
+# Service-to-Service Authorization Policy
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: service-to-service-policy
+  namespace: bookman-system
+spec:
+  selector:
+    matchLabels:
+      app: bookman-ai
+  rules:
+    - from:
+        - source:
+            principals: ["cluster.local/ns/bookman-system/sa/bookman-ai-*"]
+            namespaces: ["bookman-system", "monitoring"]
+    - to:
+        - operation:
+            methods: ["GET", "POST", "PUT", "DELETE"]
+            paths: ["/*"]
+            ports: ["8080", "9090"]
+    - when:
+        - key: request.auth.claims[iss]
+          values: ["https://accounts.bookman-ai.com"]
+
+---
+# Circuit Breaker Policy
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: circuit-breaker-policy
+  namespace: bookman-system
+spec:
+  host: "*"
+  trafficPolicy:
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 50
+      consecutiveGatewayErrors: 5
+      consecutiveLocalOriginFailures: 5
+    loadBalancer:
+      simple: ROUND_ROBIN
+      consistentHash:
+        httpHeaderName: x-user-id
+        minimumRingSize: 1024
+
+---
+# Retry Policy
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: retry-policy
+  namespace: bookman-system
+spec:
+  hosts:
+    - "*"
+  http:
+    - route:
+        - destination:
+            host: "*"
+          weight: 100
+      retries:
+        attempts: 3
+        perTryTimeout: 2s
+        retryOn: "connect-failure,refused-stream,unavailable,cancelled,retriable-status-codes,gateway-error,reset"
+        retryRemoteLocalities: true
+      timeout: 15s
+      fault:
+        delay:
+          percentage:
+            value: 0.1
+          fixedDelay: 5s
+
+---
+# Service Mesh Telemetry
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: mesh-telemetry
+  namespace: bookman-system
+spec:
+  tracing:
+    - randomSamplingPercentage: 100.0
+      customTags:
+        environment:
+          literal:
+            value: production
+        service_version:
+          environment:
+            name: SERVICE_VERSION
+  metrics:
+    - providers:
+        - name: prometheus
+      overrides:
+        - match:
+            metric: REQUEST_COUNT
+          tagOverrides:
+            response_code:
+              operation: UPSERT
+            response_flags:
+              operation: UPSERT
+  accessLogging:
+    - providers:
+        - name: envoy
+      filter:
+        expression: "response.code >= 400"
