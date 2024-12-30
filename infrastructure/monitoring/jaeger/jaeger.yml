@@ -1,0 +1,216 @@
+# Jaeger Configuration v1.40.0
+# Distributed tracing configuration for Bookman AI platform
+
+# API version and kind
+apiVersion: jaegertracing.io/v1
+kind: Jaeger
+metadata:
+  name: bookman-jaeger
+  namespace: monitoring
+  labels:
+    app: bookman-ai
+    component: tracing
+
+spec:
+  strategy: production
+  
+  # Collector configuration
+  collector:
+    service:
+      name: jaeger-collector
+      type: ClusterIP
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "14269"
+    
+    options:
+      collector:
+        grpc:
+          host-port: ":14250"
+        http:
+          host-port: ":14268"
+        zipkin:
+          host-port: ":9411"
+        otlp:
+          enabled: true
+          grpc:
+            host-port: ":4317"
+          http:
+            host-port: ":4318"
+    
+    resources:
+      limits:
+        cpu: "1"
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 512Mi
+    
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 80
+
+  # Agent configuration  
+  agent:
+    strategy: DaemonSet
+    service:
+      name: jaeger-agent
+    
+    options:
+      agent:
+        reporters:
+          - type: grpc
+            endpoint: jaeger-collector:14250
+            tls:
+              enabled: true
+              ca: /etc/ssl/certs/ca-certificates.crt
+    
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+
+  # Query service configuration
+  query:
+    service:
+      name: jaeger-query
+      type: ClusterIP
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "16687"
+    
+    options:
+      query:
+        base-path: /jaeger
+        port: 16686
+    
+    resources:
+      limits:
+        cpu: "1"
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 512Mi
+    
+    ingress:
+      enabled: true
+      annotations:
+        kubernetes.io/ingress.class: nginx
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+      hosts:
+        - jaeger.bookman.ai
+      tls:
+        - secretName: jaeger-tls
+          hosts:
+            - jaeger.bookman.ai
+
+  # Storage configuration
+  storage:
+    type: elasticsearch
+    options:
+      es:
+        server-urls: http://elasticsearch:9200
+        index-prefix: bookman-traces
+        username: ${ELASTIC_USERNAME}
+        password: ${ELASTIC_PASSWORD}
+        tls:
+          enabled: true
+          ca: /etc/ssl/certs/ca-certificates.crt
+    
+    elasticsearch:
+      nodeCount: 3
+      resources:
+        requests:
+          cpu: "1"
+          memory: 2Gi
+        limits:
+          cpu: "2"
+          memory: 4Gi
+      storage:
+        size: 100Gi
+        storageClassName: managed-premium
+      redundancyPolicy: SingleRedundancy
+
+  # Sampling configuration
+  sampling:
+    type: probabilistic
+    param: 1.0
+    options:
+      default_strategy:
+        type: probabilistic
+        param: 1.0
+      service_strategies:
+        - service: api-gateway
+          type: probabilistic
+          param: 1.0
+        - service: auth-service
+          type: probabilistic
+          param: 1.0
+        - service: market-analysis
+          type: probabilistic
+          param: 1.0
+        - service: education-service
+          type: probabilistic
+          param: 0.5
+        - service: portfolio-service
+          type: probabilistic
+          param: 0.5
+
+  # Security configuration
+  security:
+    oauth:
+      enabled: true
+      clientId: jaeger-ui
+      clientSecret: ${OAUTH_CLIENT_SECRET}
+      issuer: https://auth.bookman.ai
+    tls:
+      enabled: true
+      ca: /etc/ssl/certs/ca-certificates.crt
+    authentication:
+      type: oauth
+    authorization:
+      enabled: true
+      roleAttributePath: resource_access.jaeger.roles
+
+  # UI configuration
+  ui:
+    options:
+      menu:
+        - label: "Grafana"
+          url: "https://grafana.bookman.ai"
+      dependencies:
+        menuEnabled: true
+      tracking:
+        gaID: UA-000000-2
+      logoUrl: https://bookman.ai/logo.png
+    
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+
+  # Integration with monitoring stack
+  monitoring:
+    prometheus:
+      enabled: true
+      scrapeInterval: 15s
+      scrapeTimeout: 10s
+    serviceMonitor:
+      enabled: true
+      interval: 15s
+      selector:
+        prometheus: bookman-prometheus
+
+  # Retention configuration
+  retention:
+    schedule: "0 0 * * *"
+    days: 7
+    enabled: true
