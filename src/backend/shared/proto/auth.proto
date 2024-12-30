@@ -1,0 +1,180 @@
+syntax = "proto3";
+
+package bookman.auth;
+
+import "google/protobuf/timestamp.proto";
+
+// Service version and options
+option go_package = "github.com/bookman/auth/proto";
+option java_package = "com.bookman.auth.proto";
+option java_multiple_files = true;
+
+// Authentication service with enhanced security features
+service AuthService {
+  // Register a new user with enhanced security validation
+  rpc Register(RegisterRequest) returns (RegisterResponse) {}
+  
+  // Authenticate user with security checks and 2FA support
+  rpc Login(LoginRequest) returns (LoginResponse) {}
+  
+  // Refresh authentication tokens with enhanced validation
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse) {}
+  
+  // Handle secure logout with session cleanup
+  rpc Logout(LogoutRequest) returns (LogoutResponse) {}
+  
+  // Validate tokens with enhanced security checks
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse) {}
+}
+
+// User roles enum matching schema definition
+enum UserRole {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_GUEST = 1;
+  ROLE_USER = 2;
+  ROLE_PREMIUM = 3;
+  ROLE_ADMIN = 4;
+  ROLE_SECURITY = 5;
+}
+
+// Authentication providers enum matching schema
+enum AuthProvider {
+  AUTH_PROVIDER_UNSPECIFIED = 0;
+  AUTH_PROVIDER_EMAIL = 1;
+  AUTH_PROVIDER_GOOGLE = 2;
+  AUTH_PROVIDER_GITHUB = 3;
+}
+
+// Registration request with enhanced security options
+message RegisterRequest {
+  string email = 1;
+  string username = 2;
+  string password = 3;
+  AuthProvider auth_provider = 4;
+  bool enable_2fa = 5;
+  string timezone = 6;
+  string language = 7;
+}
+
+// Registration response with security setup details
+message RegisterResponse {
+  string user_id = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+  bool requires_2fa_setup = 4;
+  string two_factor_secret = 5;
+  repeated string backup_codes = 6;
+  UserRole role = 7;
+  google.protobuf.Timestamp created_at = 8;
+  SecuritySettings security_settings = 9;
+}
+
+// Login request with 2FA support
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+  string two_factor_code = 3;
+  string backup_code = 4;
+  AuthProvider auth_provider = 5;
+  string oauth_token = 6;
+}
+
+// Login response with security status
+message LoginResponse {
+  string user_id = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+  UserRole role = 4;
+  SecurityStatus security_status = 5;
+  google.protobuf.Timestamp expires_at = 6;
+  repeated string security_alerts = 7;
+}
+
+// Token refresh request
+message RefreshTokenRequest {
+  string refresh_token = 1;
+  string user_id = 2;
+}
+
+// Token refresh response with validation
+message RefreshTokenResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  google.protobuf.Timestamp expires_at = 3;
+  SecurityStatus security_status = 4;
+}
+
+// Logout request with session data
+message LogoutRequest {
+  string user_id = 1;
+  string access_token = 2;
+  string session_id = 3;
+}
+
+// Logout response with cleanup confirmation
+message LogoutResponse {
+  bool success = 1;
+  repeated string revoked_sessions = 2;
+  google.protobuf.Timestamp logout_time = 3;
+}
+
+// Token validation request with context
+message ValidateTokenRequest {
+  string token = 1;
+  string user_id = 2;
+  repeated string required_permissions = 3;
+}
+
+// Token validation response with security details
+message ValidateTokenResponse {
+  bool valid = 1;
+  UserRole role = 2;
+  repeated string permissions = 3;
+  SecurityStatus security_status = 4;
+  google.protobuf.Timestamp expires_at = 5;
+}
+
+// Security settings message
+message SecuritySettings {
+  bool two_factor_enabled = 1;
+  google.protobuf.Timestamp last_password_change = 2;
+  int32 failed_login_attempts = 3;
+  google.protobuf.Timestamp account_locked_until = 4;
+  repeated SecurityEvent recent_events = 5;
+}
+
+// Security event message
+message SecurityEvent {
+  enum EventType {
+    EVENT_TYPE_UNSPECIFIED = 0;
+    LOGIN_SUCCESS = 1;
+    LOGIN_FAILURE = 2;
+    PASSWORD_CHANGE = 3;
+    TWO_FACTOR_ENABLED = 4;
+    TWO_FACTOR_DISABLED = 5;
+    ACCOUNT_LOCKED = 6;
+    SECURITY_QUESTION_UPDATED = 7;
+  }
+  
+  EventType event_type = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  string ip_address = 3;
+  string user_agent = 4;
+  Location location = 5;
+}
+
+// Location message for security events
+message Location {
+  string country = 1;
+  string city = 2;
+}
+
+// Security status message
+message SecurityStatus {
+  bool account_locked = 1;
+  int32 remaining_attempts = 2;
+  google.protobuf.Timestamp lockout_expires = 3;
+  bool requires_password_change = 4;
+  bool requires_2fa = 5;
+  repeated string active_sessions = 6;
+}
