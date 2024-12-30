@@ -1,0 +1,192 @@
+---
+# Market Analysis Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: market-analysis-deployment
+  labels:
+    app: market-analysis
+    component: backend
+    part-of: bookman-ai
+    version: v1
+    tier: analysis
+  annotations:
+    kubernetes.io/change-cause: "Initial deployment of market analysis service"
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/metrics"
+spec:
+  replicas: 3  # Initial replica count for high availability
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1        # Maximum number of pods above desired count
+      maxUnavailable: 0  # Zero downtime deployment
+  selector:
+    matchLabels:
+      app: market-analysis
+  template:
+    metadata:
+      labels:
+        app: market-analysis
+        security-context: restricted
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+        sidecar.istio.io/inject: "true"  # Enable service mesh
+    spec:
+      securityContext:
+        runAsNonRoot: true  # Security best practice
+        runAsUser: 1000     # Non-root user
+        fsGroup: 2000       # File system group
+      containers:
+      - name: market-analysis
+        image: bookman-ai/market-analysis:latest
+        imagePullPolicy: Always
+        ports:
+        - name: grpc
+          containerPort: 50051
+          protocol: TCP
+        - name: metrics
+          containerPort: 8080
+          protocol: TCP
+        resources:
+          requests:
+            cpu: "1000m"    # 1 CPU core minimum
+            memory: "2Gi"   # 2GB RAM minimum
+          limits:
+            cpu: "2000m"    # 2 CPU cores maximum
+            memory: "4Gi"   # 4GB RAM maximum
+        env:
+        - name: TIMESCALE_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: market-analysis-config
+              key: TIMESCALE_HOST
+        - name: TIMESCALE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: market-analysis-secrets
+              key: TIMESCALE_PASSWORD
+        - name: API_KEY_BINANCE
+          valueFrom:
+            secretKeyRef:
+              name: market-analysis-secrets
+              key: API_KEY_BINANCE
+        - name: API_RATE_LIMIT
+          valueFrom:
+            configMapKeyRef:
+              name: market-analysis-config
+              key: API_RATE_LIMIT
+        - name: ML_MODEL_CONFIG
+          valueFrom:
+            configMapKeyRef:
+              name: market-analysis-config
+              key: ML_MODEL_CONFIG
+        - name: ML_MODEL_KEY
+          valueFrom:
+            secretKeyRef:
+              name: market-analysis-secrets
+              key: ML_MODEL_KEY
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /startup
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          failureThreshold: 30
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - market-analysis
+              topologyKey: kubernetes.io/hostname
+
+---
+# Market Analysis Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: market-analysis-service
+  labels:
+    app: market-analysis
+    component: backend
+spec:
+  type: ClusterIP
+  ports:
+  - name: grpc
+    port: 50051
+    targetPort: 50051
+    protocol: TCP
+  - name: metrics
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  selector:
+    app: market-analysis
+
+---
+# Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: market-analysis-hpa
+  labels:
+    app: market-analysis
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: market-analysis-deployment
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Pods
+        value: 2
+        periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Pods
+        value: 1
+        periodSeconds: 120
