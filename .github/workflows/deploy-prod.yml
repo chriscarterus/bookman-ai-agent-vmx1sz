@@ -1,0 +1,253 @@
+# Production Deployment Workflow for Bookman AI Platform
+# Version: 1.0.0
+# Dependencies:
+# - AWS EKS: v1.24+
+# - Kong Gateway: v3.0+
+# - Docker: v24.0+
+name: Production Deployment
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version'
+        required: true
+        type: string
+      force_deploy:
+        description: 'Force deployment bypassing canary'
+        required: false
+        type: boolean
+        default: false
+
+# Ensure only one production deployment runs at a time
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+# Required permissions for AWS, Docker, and GitHub
+permissions:
+  id-token: write
+  contents: read
+  packages: write
+  deployments: write
+  security-events: write
+
+env:
+  ENVIRONMENT: production
+  AWS_REGIONS: '["us-west-2", "us-east-1", "eu-west-1"]'
+  CANARY_STEPS: '[10, 25, 50, 75, 100]'
+  HEALTH_CHECK_THRESHOLD: '99.9'
+  ROLLBACK_THRESHOLD: '95.0'
+
+jobs:
+  validate:
+    name: Validate Deployment Prerequisites
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Verify CI workflow results
+        run: |
+          if ! gh workflow view backend-ci.yml --ref ${{ github.sha }} | grep -q "conclusion:.*success"; then
+            echo "Backend CI workflow must pass before deployment"
+            exit 1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate security scan results
+        run: |
+          SCAN_STATUS=$(gh workflow view security-scan.yml --ref ${{ github.sha }} | grep "conclusion" || echo "not_found")
+          if [[ $SCAN_STATUS != *"success"* ]]; then
+            echo "Security scan must pass before deployment"
+            exit 1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify Kubernetes manifests
+        run: |
+          kubectl --dry-run=client -f src/backend/k8s/api-gateway.yaml
+          kubectl --dry-run=client -f src/backend/k8s/configmaps.yaml
+          kubectl --dry-run=client -f src/backend/k8s/secrets.yaml
+
+      - name: Validate Kong Gateway configuration
+        run: |
+          deck validate -s src/backend/api-gateway/kong.yml
+          deck validate -s src/backend/api-gateway/plugins.yml
+          deck validate -s src/backend/api-gateway/routes.yml
+
+  build:
+    name: Build Production Images
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-west-2
+
+      - name: Login to Amazon ECR
+        run: aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${{ secrets.AWS_ECR_REGISTRY }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          version: latest
+          driver-opts: image=moby/buildkit:master
+
+      - name: Build and push images
+        run: |
+          for service in auth market education portfolio security community; do
+            docker buildx build \
+              --platform linux/amd64,linux/arm64 \
+              --cache-from type=registry,ref=${{ secrets.AWS_ECR_REGISTRY }}/$service:cache \
+              --cache-to type=registry,ref=${{ secrets.AWS_ECR_REGISTRY }}/$service:cache,mode=max \
+              --tag ${{ secrets.AWS_ECR_REGISTRY }}/$service:${{ github.sha }} \
+              --tag ${{ secrets.AWS_ECR_REGISTRY }}/$service:latest \
+              --push \
+              ./src/backend/$service
+          done
+
+      - name: Scan container images
+        uses: snyk/actions/container@v2
+        with:
+          image: ${{ secrets.AWS_ECR_REGISTRY }}/auth:${{ github.sha }}
+          args: --severity-threshold=high
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Sign container images
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: 'v2.0.0'
+
+      - name: Sign images with cosign
+        run: |
+          for service in auth market education portfolio security community; do
+            cosign sign -y \
+              --key env://COSIGN_PRIVATE_KEY \
+              ${{ secrets.AWS_ECR_REGISTRY }}/$service:${{ github.sha }}
+          done
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+
+  canary:
+    name: Canary Deployment
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://bookman-ai.com
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-west-2
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name bookman-prod --region us-west-2
+
+      - name: Deploy canary infrastructure
+        run: |
+          kubectl apply -f src/backend/k8s/configmaps.yaml
+          kubectl apply -f src/backend/k8s/secrets.yaml
+          
+          # Apply canary deployments with initial traffic percentage
+          for service in auth market education portfolio security community; do
+            kubectl apply -f src/backend/k8s/$service/canary.yaml
+          done
+
+      - name: Progressive traffic shift
+        run: |
+          for percentage in ${{ env.CANARY_STEPS }}; do
+            echo "Shifting $percentage% traffic to canary"
+            kubectl patch svc api-gateway-service -p \
+              "{\"spec\":{\"trafficPolicy\":{\"canary\":{\"weight\":$percentage}}}}"
+            
+            # Wait for metrics to stabilize
+            sleep 300
+            
+            # Check error rates and latency
+            if ! kubectl exec -n monitoring prometheus-0 -- curl -s localhost:9090/api/v1/query \
+              -d 'query=rate(http_requests_total{status=~"5.."}[5m])' | jq -e '.data.result[0].value[1] < 0.001'; then
+              echo "Error rate exceeded threshold, rolling back"
+              kubectl rollout undo deployment/api-gateway-deployment
+              exit 1
+            fi
+          done
+
+      - name: Verify canary metrics
+        run: |
+          # Check key metrics
+          kubectl exec -n monitoring prometheus-0 -- curl -s localhost:9090/api/v1/query \
+            -d 'query=sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) * 100' \
+            | jq -e '.data.result[0].value[1] < 1'
+
+  deploy:
+    name: Production Deployment
+    needs: canary
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://bookman-ai.com
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-west-2
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name bookman-prod --region us-west-2
+
+      - name: Deploy to production
+        run: |
+          # Update Kong Gateway configuration
+          kubectl apply -f src/backend/k8s/api-gateway.yaml
+          
+          # Deploy services with zero downtime
+          for service in auth market education portfolio security community; do
+            kubectl apply -f src/backend/k8s/$service/deployment.yaml
+            kubectl rollout status deployment/$service-deployment -n bookman-system --timeout=10m
+          done
+
+      - name: Verify deployment health
+        run: |
+          # Check deployment status
+          kubectl get deployments -n bookman-system -o json | \
+            jq -e '.items[].status | select(.availableReplicas < .replicas) | length == 0'
+          
+          # Verify API Gateway health
+          curl -f https://bookman-ai.com/health
+
+      - name: Configure monitoring
+        run: |
+          # Update Prometheus rules
+          kubectl apply -f monitoring/prometheus/rules.yaml
+          
+          # Update Grafana dashboards
+          kubectl apply -f monitoring/grafana/dashboards.yaml
+          
+          # Setup alerts
+          kubectl apply -f monitoring/alertmanager/alerts.yaml
+
+      - name: Create deployment tag
+        if: success()
+        run: |
+          git tag deployment/${{ github.sha }}
+          git push origin deployment/${{ github.sha }}
