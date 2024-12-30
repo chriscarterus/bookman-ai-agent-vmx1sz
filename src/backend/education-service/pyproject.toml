@@ -1,0 +1,114 @@
+[tool.poetry]
+name = "bookman-education-service"
+version = "1.0.0"
+description = "AI-powered education service for cryptocurrency learning platform with personalized learning paths"
+authors = ["Bookman AI Team"]
+readme = "README.md"
+packages = [{include = "src"}]
+python = "^3.11"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.100.0"  # High-performance async web framework
+uvicorn = "^0.22.0"  # ASGI server implementation
+pydantic = "^2.0.0"  # Data validation using Python type hints
+sqlalchemy = "^2.0.0"  # SQL toolkit and ORM
+alembic = "^1.11.0"  # Database migrations
+psycopg2-binary = "^2.9.0"  # PostgreSQL adapter
+redis = "^4.6.0"  # Redis client for caching
+tensorflow = "^2.13.0"  # ML framework for learning paths
+torch = "^2.0.0"  # Deep learning for recommendations
+transformers = "^4.30.0"  # NLP models
+openai = "^1.0.0"  # AI content generation
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}  # JWT token handling
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}  # Password hashing
+python-multipart = "^0.0.6"  # Form data parsing
+aiohttp = "^3.8.5"  # Async HTTP client
+prometheus-client = "^0.17.0"  # Metrics collection
+structlog = "^23.1.0"  # Structured logging
+tenacity = "^8.2.2"  # Retry handling
+pyyaml = "^6.0.1"  # YAML configuration support
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"  # Testing framework
+pytest-cov = "^4.1.0"  # Coverage reporting
+pytest-asyncio = "^0.21.0"  # Async test support
+black = "^23.7.0"  # Code formatting
+isort = "^5.12.0"  # Import sorting
+mypy = "^1.4.0"  # Static type checking
+flake8 = "^6.0.0"  # Code linting
+flake8-docstrings = "^1.7.0"  # Docstring linting
+flake8-bugbear = "^23.3.12"  # Additional bug checks
+pytest-mock = "^3.11.1"  # Mocking support
+faker = "^19.2.0"  # Test data generation
+aioresponses = "^0.7.4"  # Async HTTP mocking
+docker = "^6.1.2"  # Container management for tests
+locust = "^2.15.1"  # Load testing
+safety = "^2.3.5"  # Dependency security checking
+
+[tool.poetry.scripts]
+start = "uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload"
+test = "pytest tests/ --cov=src/ --cov-report=term-missing --cov-report=html"
+lint = "flake8 src/ tests/"
+format = "black src/ tests/ && isort src/ tests/"
+typecheck = "mypy src/ --strict"
+security-check = "safety check"
+load-test = "locust -f tests/load/locustfile.py"
+
+[build-system]
+requires = ["poetry-core>=1.5.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+line_length = 88
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+branch = true
+source = ["src"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "pass",
+    "raise ImportError",
+]
+ignore_errors = true
+omit = ["tests/*", "setup.py"]
