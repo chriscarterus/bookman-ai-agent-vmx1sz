@@ -1,0 +1,40 @@
+* @project-leads
+
+# Frontend application ownership
+src/web/ @frontend-team
+
+# Backend service ownership with specific team requirements
+src/backend/ @backend-team @devops-team
+
+# Authentication service with mandatory security review
+src/backend/auth-service/ @security-team @backend-team
+
+# Security service with strict review requirements
+src/backend/security-service/ @security-team @backend-team
+
+# Market analysis and ML services
+src/backend/market-analysis/ @data-science-team @backend-team
+
+# Portfolio service with security oversight
+src/backend/portfolio-service/ @backend-team @security-team
+
+# Education service with content team involvement
+src/backend/education-service/ @backend-team @content-team
+
+# ML model configurations and training
+src/backend/ml-models/ @data-science-team @backend-team
+
+# Database migrations requiring security review
+src/backend/db/migrations/ @database-team @backend-team @security-team
+
+# Infrastructure configurations
+infrastructure/ @devops-team @security-team
+
+# Security-specific infrastructure
+infrastructure/security/ @security-team @devops-team
+
+# CI/CD workflow configurations
+.github/workflows/ @devops-team @security-team
+
+# Application configuration files
+config/ @devops-team @security-team
