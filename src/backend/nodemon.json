@@ -1,0 +1,51 @@
+{
+  "verbose": true,
+  "restartable": "rs",
+  "colours": true,
+  "watch": [
+    "auth-service/src/**/*.ts",
+    "community-service/src/**/*.ts",
+    "education-service/src/**/*.ts",
+    "market-analysis/src/**/*.py",
+    "portfolio-service/**/*.go",
+    "security-service/src/**/*.rs"
+  ],
+  "ignore": [
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/*_test.go",
+    "**/*_test.py",
+    "**/*.test.rs",
+    "**/tests/**",
+    "**/test/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/target/**",
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/__pycache__/**",
+    "**/coverage/**"
+  ],
+  "execMap": {
+    "ts": "node -r ts-node/register",
+    "py": "python",
+    "go": "go run",
+    "rs": "cargo run"
+  },
+  "ext": ".ts,.js,.json,.py,.go,.rs",
+  "delay": 1000,
+  "env": {
+    "NODE_ENV": "development",
+    "DEBUG": "bookman:*",
+    "TS_NODE_PROJECT": "tsconfig.json",
+    "PYTHONUNBUFFERED": "1",
+    "RUST_BACKTRACE": "1"
+  },
+  "events": {
+    "start": "echo \"Starting development environment...\"",
+    "restart": "echo \"Restarting due to changes...\"",
+    "crash": "echo \"Process crashed - waiting for changes before restart\""
+  },
+  "legacyWatch": false,
+  "signal": "SIGTERM"
+}
