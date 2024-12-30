@@ -1,0 +1,211 @@
+/* ==========================================================================
+   Bookman AI Platform Animations
+   Performance-optimized animations and transitions with accessibility support
+   ========================================================================== */
+
+@import './variables.css';
+
+/* ==========================================================================
+   Keyframe Animations
+   GPU-accelerated using transform and opacity only
+   ========================================================================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    will-change: opacity;
+  }
+  to {
+    opacity: 1;
+    will-change: auto;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    will-change: opacity;
+  }
+  to {
+    opacity: 0;
+    will-change: auto;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+    will-change: auto;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+    will-change: transform, opacity;
+  }
+  to {
+    transform: translateY(20px);
+    opacity: 0;
+    will-change: auto;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    will-change: transform;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    will-change: auto;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+    will-change: transform;
+  }
+  to {
+    transform: rotate(360deg);
+    will-change: auto;
+  }
+}
+
+/* ==========================================================================
+   Animation Classes
+   Optimized for performance with GPU acceleration
+   ========================================================================== */
+
+.fade-in {
+  animation: fadeIn var(--transition-normal) ease-in-out forwards;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.fade-out {
+  animation: fadeOut var(--transition-normal) ease-in-out forwards;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.slide-in {
+  animation: slideIn var(--transition-normal) ease-out forwards;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.slide-out {
+  animation: slideOut var(--transition-normal) ease-in forwards;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.pulse {
+  animation: pulse var(--transition-slow) ease-in-out infinite;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.spin {
+  animation: spin var(--transition-normal) linear infinite;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+/* ==========================================================================
+   Interactive Transitions
+   Performance-optimized hover and active states
+   ========================================================================== */
+
+.hover-scale {
+  transition: transform var(--transition-fast) ease-in-out;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+  will-change: transform;
+}
+
+.hover-scale:active {
+  transform: scale(0.98);
+  will-change: transform;
+}
+
+.hover-lift {
+  transition: transform var(--transition-fast) ease-in-out,
+              box-shadow var(--transition-fast) ease-in-out;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  will-change: transform, box-shadow;
+}
+
+.hover-lift:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+  will-change: transform, box-shadow;
+}
+
+/* ==========================================================================
+   Accessibility - Reduced Motion
+   Respects user preferences for reduced motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+    animation-delay: -0.01ms !important;
+  }
+}
+
+/* ==========================================================================
+   Browser Support
+   Graceful degradation for older browsers
+   ========================================================================== */
+
+@supports not (animation-timeline: scroll) {
+  .fade-in,
+  .fade-out,
+  .slide-in,
+  .slide-out {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   CSS Module Exports
+   Export animation classes for component usage
+   ========================================================================== */
+
+:export {
+  fadeIn: fade-in;
+  fadeOut: fade-out;
+  slideIn: slide-in;
+  slideOut: slide-out;
+  pulse: pulse;
+  spin: spin;
+  hoverScale: hover-scale;
+  hoverLift: hover-lift;
+}
